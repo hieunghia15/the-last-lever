@@ -26,16 +26,54 @@ export const suitOf = (c: Card) => c & 3;
 
 Quyết định #10: **tự viết**; `pokersolver` chỉ là devDependency để đối chiếu trong test. Yêu cầu tốc độ: equity 300 lần mô phỏng (khoảng 600 lần chấm 7 lá) dưới 50 ms trên điện thoại.
 
+### Thứ tự hạng tay, từ mạnh đến yếu (luật cốt lõi)
+
+Đây là phần quan trọng nhất của bộ xếp hạng. Mọi so sánh tay bài phải theo đúng bảng này.
+
+| Hạng | Tên | Tiếng Anh | `HandRank` | `category` | Ví dụ | Cùng hạng thì so |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 (mạnh nhất) | Thùng phá sảnh lớn | Royal Flush | `royalFlush` | 8 (lá cao nhất là A) | A♠ K♠ Q♠ J♠ 10♠ | Luôn hòa |
+| 2 | Thùng phá sảnh | Straight Flush | `straightFlush` | 8 | 5♠ 6♠ 7♠ 8♠ 9♠ | Lá cao nhất của sảnh; A-2-3-4-5 là thấp nhất (lá cao nhất là 5) |
+| 3 | Tứ quý | Four of a Kind | `fourOfAKind` | 7 | A A A A | Giá trị tứ quý, rồi 1 kicker |
+| 4 | Cù lũ | Full House | `fullHouse` | 6 | K K K Q Q | Giá trị bộ ba, rồi giá trị đôi |
+| 5 | Thùng | Flush | `flush` | 5 | 5 lá cùng chất, không cần liên tiếp | Lần lượt 5 lá từ cao xuống thấp |
+| 6 | Sảnh | Straight | `straight` | 4 | 5 lá liên tiếp, không cần cùng chất | Lá cao nhất của sảnh; A-2-3-4-5 là thấp nhất |
+| 7 | Sám cô | Three of a Kind | `threeOfAKind` | 3 | 7 7 7 | Giá trị bộ ba, rồi 2 kicker |
+| 8 | Hai đôi | Two Pair | `twoPair` | 2 | A A K K | Đôi cao, đôi thấp, rồi 1 kicker |
+| 9 | Một đôi | One Pair | `onePair` | 1 | 9 9 | Giá trị đôi, rồi 3 kicker |
+| 10 (yếu nhất) | Mậu thầu | High Card | `highCard` | 0 | Không có bộ nào ở trên | Lần lượt 5 lá từ cao xuống thấp |
+
+Mẹo nhớ: Thùng phá sảnh > Tứ quý > Cù lũ > Thùng > Sảnh > Sám cô > Hai đôi > Một đôi > Mậu thầu.
+
+Các quy tắc đi kèm:
+
+- **Chất không bao giờ dùng để phân thắng thua.** Hai tay giống hệt nhau về giá trị thì hòa.
+- **Thùng phá sảnh lớn không cần `category` riêng.** Nó là thùng phá sảnh có lá cao nhất là A, nên ở trong mã số đã luôn mạnh nhất. Vì vậy `HandValue` chỉ dùng 9 `category` (0–8), còn `handRank(v)` tách riêng `royalFlush` để lớp hiển thị gọi đúng tên.
+- **Lõi chỉ trả mã `HandRank`.** Tên tiếng Việt và tiếng Anh nằm trong `i18n` (Phase 2).
+
 ### Giá trị tay là một số, lớn hơn thì mạnh hơn
 
 ```ts
 export type HandValue = number;
 // (category << 20) | (k1 << 16) | (k2 << 12) | (k3 << 8) | (k4 << 4) | k5
 // category: 0 high card, 1 pair, 2 two pair, 3 trips, 4 straight,
-//           5 flush, 6 full house, 7 quads, 8 straight flush
+//           5 flush, 6 full house, 7 quads, 8 straight flush (incl. royal)
 export function evaluate7(cards: readonly Card[]): HandValue;
 export const compareHands = (a: HandValue, b: HandValue) => a - b; // >0: a thắng, 0: hòa
 export const handCategory = (v: HandValue) => v >> 20;
+
+export type HandRank =
+  | 'royalFlush'
+  | 'straightFlush'
+  | 'fourOfAKind'
+  | 'fullHouse'
+  | 'flush'
+  | 'straight'
+  | 'threeOfAKind'
+  | 'twoPair'
+  | 'onePair'
+  | 'highCard';
+export function handRank(v: HandValue): HandRank; // category 8 với k1 = A thì là 'royalFlush'
 ```
 
 Nhờ vậy so tay chỉ là so số, và hòa bài nghĩa là hai số bằng nhau.
@@ -54,6 +92,8 @@ Nhờ vậy so tay chỉ là so số, và hòa bài nghĩa là hai số bằng n
 | A-2-3-4-5 | Sảnh, lá cao nhất là 5; thua 2-3-4-5-6 |
 | A♠ 2♠ 3♠ 4♠ 5♠ | Thùng phá sảnh lá cao nhất là 5 |
 | 10-J-Q-K-A | Sảnh cao nhất; Q-K-A-2-3 không phải sảnh |
+| A♠ K♠ Q♠ J♠ 10♠ | `handRank` là `royalFlush`, thắng mọi thùng phá sảnh khác |
+| Cùng giá trị, khác chất | Hòa, chất không phân thắng thua |
 | Hai bộ ba trong 7 lá | Cù lũ: bộ ba cao, đôi lấy từ bộ ba thấp |
 | Bộ ba + hai đôi | Cù lũ với đôi cao hơn |
 | Ba đôi | Hai đôi cao nhất, kicker là lá cao nhất còn lại (có thể là lá của đôi thứ ba) |

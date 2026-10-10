@@ -54,6 +54,7 @@ Các luật này đã được chốt trong `docs/plan.md`:
 - **Bỏ bài:** kéo theo mức người đó **đã theo**, không phải mức vừa bị tăng lên, và tối thiểu 1 cần. Ví dụ: mức đang là 2, đối thủ tăng lên 3, người chơi bỏ bài thì kéo 2 cần.
 - **Người đi trước:** mỗi ván chọn ngẫu nhiên. Người đi trước mở lời ở cả 4 vòng cược. Luật này không có blind.
 - **Giới hạn tăng:** mỗi người tăng tối đa 1 lần mỗi vòng, và Tất tay cũng tính là lần tăng đó. Tất tay lên thẳng mức 6. Nếu Tất tay được Theo thì tự lật hết lá chung và so bài.
+- **Thứ tự hạng tay (mạnh → yếu):** Thùng phá sảnh lớn > Thùng phá sảnh > Tứ quý > Cù lũ > Thùng > Sảnh > Sám cô > Hai đôi > Một đôi > Mậu thầu. Chất không bao giờ phân thắng thua. Cách so khi cùng hạng nằm trong skill `poker-engine`.
 - **Poker hòa bài:** ván hòa, không ai phải kéo cần.
 - **Cần gạt:** số cần Nguy hiểm được chọn ngẫu nhiên đều từ 1 đến 5 trong 6 cần. Gặp Nguy hiểm thì dừng kéo ngay. Kéo đủ số mà toàn Safe thì ván hòa. Hai loại hòa gộp chung một con số.
 - **Bot không có biểu cảm.** Nhân vật là một hình tĩnh. Bot gây nhiễu bằng bong bóng thoại có thể nói dối và bằng những ván lừa.

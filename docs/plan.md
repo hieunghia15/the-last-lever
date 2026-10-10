@@ -49,9 +49,11 @@ Nhánh: `feat/setup-project`.
 
 ## Phase 1 – Lõi luật chơi
 
+Nhánh: `feat/core-game-mechanics`. Task chi tiết: [docs/tasks/phase-1.md](tasks/phase-1.md).
+
 - [ ] `rng.ts`: PRNG có hạt giống (ví dụ mulberry32), hàm `shuffle`, `int`, `pick`
 - [ ] `cards.ts`: kiểu lá bài, bộ 52 lá, xáo bằng `rng`
-- [ ] `handEvaluator.ts`: bộ 5 lá mạnh nhất từ 7 lá, so sánh hai tay, tính cả sảnh A-2-3-4-5
+- [ ] `handEvaluator.ts`: bộ 5 lá mạnh nhất từ 7 lá, so sánh hai tay theo 10 hạng (Thùng phá sảnh lớn > Thùng phá sảnh > Tứ quý > Cù lũ > Thùng > Sảnh > Sám cô > Hai đôi > Một đôi > Mậu thầu), tính cả sảnh A-2-3-4-5
 - [ ] Test `handEvaluator`: các trường hợp biên viết tay + đối chiếu `pokersolver` trên ~10.000 tay ngẫu nhiên có hạt giống; benchmark tốc độ
 - [ ] `betting.ts`: mức chung 1–6, hành động Xem bài / Tăng / Theo / Bỏ / Tất tay, mỗi người tăng tối đa 1 lần mỗi vòng (Tất tay tính là tăng), hàm `legalActions`, ghi lại mức mỗi người đã theo
 - [ ] `levers.ts`: số cần Nguy hiểm ngẫu nhiên đều 1–5, xáo vị trí, kéo cần, mỗi cần kéo một lần, dừng khi trúng Nguy hiểm
