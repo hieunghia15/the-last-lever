@@ -1,3 +1,79 @@
+# The Last Lever
+
+Game trình duyệt một người chơi. Người chơi đấu Texas Hold'em tay đôi với một bot và cược bằng số cần gạt, từ 1 đến 6. Người thua ván poker phải kéo đúng số cần đã cược. Kéo trúng cần Nguy hiểm thì đối thủ được một chiến thắng. Trận đấu theo thể thức BEST OF 3, 5 hoặc 7. Game chạy trên máy tính và điện thoại, màn hình ngang, khung thiết kế 1280×720. Không dùng tiền thật.
+
+Công nghệ: Phaser 4.2, TypeScript 6.0 (strict), Vite 8, Vitest, ESLint (có kiểm tra kiểu) và Prettier.
+
+## Tài liệu nguồn
+
+- `the-last-lever-thiet-ke.md`: tài liệu thiết kế gốc, gồm luật chơi, bot, bố cục màn hình và kiến trúc.
+- `docs/plan.md`: các phase kèm checklist, cùng **bảng quyết định ghi đè tài liệu thiết kế**. Khi hai tài liệu mâu thuẫn, `docs/plan.md` được ưu tiên.
+- Làm xong một task thì đánh dấu `[x]` cho task đó trong `docs/plan.md`.
+
+## Lệnh
+
+| Lệnh | Việc |
+| --- | --- |
+| `npm run dev` | Chạy dev server |
+| `npm run dev:host` | Chạy dev server có mở mạng LAN để thử trên điện thoại |
+| `npm run typecheck` | Kiểm tra kiểu với `tsconfig.json` (src) và `tsconfig.node.json` (config, scripts) |
+| `npm run lint` | Chạy ESLint |
+| `npm run format` / `format:check` | Định dạng hoặc kiểm tra định dạng bằng Prettier (bỏ qua `*.md`) |
+| `npm test` | Chạy Vitest một lần |
+| `npm run build` | Typecheck rồi build ra thư mục `dist/` (web tĩnh) |
+
+Một việc chỉ được coi là xong khi `typecheck`, `lint`, `format:check` và `test` đều qua. CI (`.github/workflows/ci.yml`) chạy cùng các bước đó cho PR vào `main`.
+
+## Kiến trúc
+
+```text
+src/
+  core/      luật chơi, TypeScript thuần
+  ai/        bot: equity, botBrain, personalities
+  scenes/    Phaser scenes, chỉ diễn hoạt
+  ui/        component Phaser: CardSprite, ActionBar, LeverPanel...
+  i18n/      vi.ts (bản gốc), en.ts, t()
+  config.ts  mọi tham số cân bằng và bố cục
+scripts/     script chạy bằng dòng lệnh (sim, play, balance)
+```
+
+Các quy tắc bắt buộc:
+
+- **`core/` và `ai/` không import Phaser, `scenes/`, `ui/` hay `i18n/`.** ESLint đã chặn việc này. Lõi phải chạy được trên Node để sau này chuyển lên server.
+- **Lõi là hàm thuần.** `applyAction(state, action)` trả về `{ state, events }` và không thay đổi trạng thái đầu vào. Các phase gồm `deal`, `betting`, `challenge`, `roundResult`, `matchOver`.
+- **Scene chỉ diễn hoạt.** Scene phát lần lượt `events` bằng tween và không tự quyết định luật.
+- **Ngẫu nhiên phải có hạt giống.** Trong `core/` và `ai/`, mọi số ngẫu nhiên đi qua `core/rng.ts`, không dùng `Math.random`. Cùng hạt giống phải cho ra cùng chuỗi sự kiện.
+- **Bot chỉ được nhận góc nhìn đã lọc** (`PlayerView`). Bot không bao giờ thấy bài của người chơi hay trạng thái ẩn của cần gạt.
+- **Không gõ cứng con số cân bằng.** Mức cược, số cần, tỉ lệ, độ trễ, ngưỡng của bot đều nằm trong `src/config.ts`. Bảng xác suất L(m) phải được tính từ config, không viết tay.
+- **Mọi chuỗi hiển thị đi qua `t()`.** Thêm khóa vào `vi.ts` trước. `en.ts` có kiểu `Messages`, nên thiếu khóa là TypeScript báo lỗi.
+
+## Luật dễ làm sai
+
+Các luật này đã được chốt trong `docs/plan.md`:
+
+- **Bỏ bài:** kéo theo mức người đó **đã theo**, không phải mức vừa bị tăng lên, và tối thiểu 1 cần. Ví dụ: mức đang là 2, đối thủ tăng lên 3, người chơi bỏ bài thì kéo 2 cần.
+- **Người đi trước:** mỗi ván chọn ngẫu nhiên. Người đi trước mở lời ở cả 4 vòng cược. Luật này không có blind.
+- **Giới hạn tăng:** mỗi người tăng tối đa 1 lần mỗi vòng, và Tất tay cũng tính là lần tăng đó. Tất tay lên thẳng mức 6. Nếu Tất tay được Theo thì tự lật hết lá chung và so bài.
+- **Poker hòa bài:** ván hòa, không ai phải kéo cần.
+- **Cần gạt:** số cần Nguy hiểm được chọn ngẫu nhiên đều từ 1 đến 5 trong 6 cần. Gặp Nguy hiểm thì dừng kéo ngay. Kéo đủ số mà toàn Safe thì ván hòa. Hai loại hòa gộp chung một con số.
+- **Bot không có biểu cảm.** Nhân vật là một hình tĩnh. Bot gây nhiễu bằng bong bóng thoại có thể nói dối và bằng những ván lừa.
+
+## Quy ước code
+
+- **Cấu hình TypeScript:** bật `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`. Vì `verbatimModuleSyntax`, import kiểu phải viết `import type`.
+- **Import Phaser** bằng default import: `import Phaser from 'phaser'`.
+- **Test** đặt cạnh file nguồn, đặt tên `*.test.ts`, nằm trong `src/`. Ưu tiên test bộ xếp hạng bài và các chuyển trạng thái của lõi.
+- **Định dạng Prettier:** nháy đơn, có dấu chấm phẩy, `trailingComma: all`, độ rộng dòng 100.
+- **Comment:** viết bằng tiếng Anh và ít, chỉ giải thích "vì sao". Thông báo lỗi lint và chuỗi giao diện có thể là tiếng Việt.
+- **Font:** Saira Stencil, tự host qua `@fontsource/saira-stencil`. `main.ts` chờ `document.fonts.load` xong mới tạo game, vì Phaser vẽ chữ một lần. Đổi font thì phải sửa cả `main.ts` lẫn `DISPLAY.fontFamily`.
+- **Phụ thuộc:** TypeScript được ghim ở `~6.0` vì `typescript-eslint` chưa hỗ trợ TypeScript 7. Đừng nâng lên 7.
+
+## Git và phạm vi
+
+- **Nhánh:** nhánh gốc là `main`. Mỗi phase làm trên một nhánh `feat/phase-N-<tên>` rồi mở PR vào `main`.
+- **Commit:** người dùng tự commit. Chỉ commit hoặc push khi được yêu cầu.
+- **Ngoài phạm vi hiện tại:** âm thanh, SDK cổng game, deploy (sau này sẽ deploy lên VPS bằng `BASE_PATH`), chơi online, mua trong game, bảng xếp hạng. Không tự ý thêm những phần này.
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 

@@ -23,7 +23,7 @@ Những điểm dưới đây ghi đè hoặc làm rõ tài liệu thiết kế.
 | 11 | Điện thoại | Lớp phủ "Hãy xoay ngang" khi cầm dọc; xin toàn màn hình ở lần chạm đầu (trừ iOS Safari). |
 | 12 | Lưu trữ | localStorage: ngôn ngữ, âm thanh (để sẵn), thống kê thắng/thua theo mức khó; mọi truy cập bọc try/catch. |
 | 13 | Ván hòa | Hòa do poker hòa bài và hòa do kéo toàn Safe gộp chung một con số. |
-| 14 | Phông chữ | Be Vietnam Pro (OFL), tự host. |
+| 14 | Phông chữ | Saira Stencil (OFL), tự host, có bộ ký tự tiếng Việt. |
 | 15 | Cách chơi | 3–4 trang tĩnh có hình minh họa. |
 | 16 | Môi trường | Chỉ dev và chơi local (`vite`, `vite --host` để thử điện thoại qua LAN). Build ra web tĩnh, `base` cấu hình được, để sau deploy lên VPS. |
 | 17 | Mốc 6 cũ | Bỏ phần SDK cổng game; thử điện thoại và giảm dung lượng nhập vào Phase 5. |
@@ -34,16 +34,16 @@ Những điểm dưới đây ghi đè hoặc làm rõ tài liệu thiết kế.
 
 Nhánh: `feat/setup-project`.
 
-- [ ] Vite + TypeScript (strict) + Phaser 4.2, npm
-- [ ] ESLint + Prettier, script `lint`, `format`, `typecheck`
-- [ ] Vitest, script `test`
-- [ ] GitHub Actions: typecheck + lint + test cho PR vào `main`
-- [ ] Khung thư mục theo tài liệu: `src/core`, `src/ai`, `src/scenes`, `src/ui`, `src/i18n`, `src/config.ts`, `scripts/`
-- [ ] Quy tắc ESLint cấm `src/core` và `src/ai` import `phaser`
-- [ ] Khung i18n: `vi.ts`, `en.ts`, `t()` có kiểm tra khóa thiếu bằng kiểu
-- [ ] Phông Be Vietnam Pro tự host
-- [ ] `vite.config.ts` có `base` cấu hình qua biến môi trường
-- [ ] Phaser khởi động một scene trống 1280×720, `Scale.FIT`, căn giữa
+- [x] Vite + TypeScript (strict) + Phaser 4.2, npm
+- [x] ESLint + Prettier, script `lint`, `format`, `typecheck`
+- [x] Vitest, script `test`
+- [x] GitHub Actions: typecheck + lint + test cho PR vào `main`
+- [x] Khung thư mục theo tài liệu: `src/core`, `src/ai`, `src/scenes`, `src/ui`, `src/i18n`, `src/config.ts`, `scripts/`
+- [x] Quy tắc ESLint cấm `src/core` và `src/ai` import `phaser`
+- [x] Khung i18n: `vi.ts`, `en.ts`, `t()` có kiểm tra khóa thiếu bằng kiểu
+- [x] Phông Saira Stencil tự host
+- [x] `vite.config.ts` có `base` cấu hình qua biến môi trường
+- [x] Phaser khởi động một scene trống 1280×720, `Scale.FIT`, căn giữa
 
 **Xong khi:** `npm run dev` mở được canvas trống; `npm run typecheck`, `lint`, `test` đều xanh trên CI.
 
