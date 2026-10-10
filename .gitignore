@@ -1,0 +1,8 @@
+# GitNexus index
+.gitnexus
+
+# Dependencies and build output
+node_modules
+dist
+coverage
+*.local
