@@ -3,6 +3,19 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+const NO_PHASER = {
+  regex: '^phaser($|/)',
+  message: 'core/ và ai/ không được phụ thuộc Phaser.',
+};
+const NO_PRESENTATION = {
+  regex: '(^|/)(scenes|ui|i18n)(/|$)',
+  message: 'core/ và ai/ không được import lớp hiển thị hay i18n.',
+};
+const NO_TESTS = {
+  regex: '(^|/)tests(/|$)',
+  message: 'Code game không được import từ tests/.',
+};
+
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'node_modules', '.gitnexus', '.claude'] },
   js.configs.recommended,
@@ -23,26 +36,22 @@ export default tseslint.config(
     files: ['*.config.{js,ts}', 'scripts/**/*.ts'],
     languageOptions: { globals: globals.node },
   },
+  // ESLint replaces (not merges) a rule's options per block, so each block lists every pattern it needs.
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['src/core/**', 'src/ai/**'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [NO_TESTS] }] },
+  },
   {
     // Rules core and bot AI must stay pure TypeScript so they can move to a server later.
     files: ['src/core/**/*.ts', 'src/ai/**/*.ts'],
     rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              regex: '^phaser($|/)',
-              message: 'core/ và ai/ không được phụ thuộc Phaser.',
-            },
-            {
-              regex: '(^|/)(scenes|ui|i18n)(/|$)',
-              message: 'core/ và ai/ không được import lớp hiển thị hay i18n.',
-            },
-          ],
-        },
-      ],
+      'no-restricted-imports': ['error', { patterns: [NO_PHASER, NO_PRESENTATION, NO_TESTS] }],
     },
+  },
+  {
+    files: ['tests/**/*.ts'],
+    languageOptions: { globals: globals.node },
   },
   {
     files: ['**/*.js'],

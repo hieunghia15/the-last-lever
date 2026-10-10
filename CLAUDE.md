@@ -35,6 +35,7 @@ src/
   i18n/      vi.ts (bản gốc), en.ts, t()
   config.ts  mọi tham số cân bằng và bố cục
 scripts/     script chạy bằng dòng lệnh (sim, play, balance)
+tests/       test Vitest, phản chiếu cấu trúc src/ (tests/core, tests/ai...), helper ở tests/testing.ts
 ```
 
 Các quy tắc bắt buộc:
@@ -63,7 +64,7 @@ Các luật này đã được chốt trong `docs/plan.md`:
 
 - **Cấu hình TypeScript:** bật `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`. Vì `verbatimModuleSyntax`, import kiểu phải viết `import type`.
 - **Import Phaser** bằng default import: `import Phaser from 'phaser'`.
-- **Test** đặt cạnh file nguồn, đặt tên `*.test.ts`, nằm trong `src/`. Ưu tiên test bộ xếp hạng bài và các chuyển trạng thái của lõi.
+- **Test** nằm trong `tests/`, phản chiếu cấu trúc `src/` (`src/core/betting.ts` ↔ `tests/core/betting.test.ts`), đặt tên `*.test.ts`. Helper dùng chung ở `tests/testing.ts`. Code trong `src/` không được import từ `tests/` (ESLint chặn). Ưu tiên test bộ xếp hạng bài và các chuyển trạng thái của lõi.
 - **Định dạng Prettier:** nháy đơn, có dấu chấm phẩy, `trailingComma: all`, độ rộng dòng 100.
 - **Comment:** viết bằng tiếng Anh và ít, chỉ giải thích "vì sao". Thông báo lỗi lint và chuỗi giao diện có thể là tiếng Việt.
 - **Font:** Saira Stencil, tự host qua `@fontsource/saira-stencil`. `main.ts` chờ `document.fonts.load` xong mới tạo game, vì Phaser vẽ chữ một lần. Đổi font thì phải sửa cả `main.ts` lẫn `DISPLAY.fontFamily`.

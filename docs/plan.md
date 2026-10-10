@@ -19,7 +19,7 @@ Những điểm dưới đây ghi đè hoặc làm rõ tài liệu thiết kế.
 | 7 | Lật bài bot | Lật khi so bài; không lật khi có người bỏ. |
 | 8 | Biểu cảm nhân vật | **Bỏ các trạng thái biểu cảm.** Nhân vật là 1 hình tĩnh; khi trúng Nguy hiểm dùng hiệu ứng phủ (tia điện, rung, nháy màu). |
 | 9 | Bong bóng thoại thay biểu cảm | Hiện ở ~30% lượt hành động của bot và một câu khi vào thử thách, 2 giây. Câu có nhãn mạnh/yếu/trung tính; tỉ lệ nói dối: Thận trọng 10%, Cân bằng 20%, Liều lĩnh 35%. ~8 câu mỗi nhãn mỗi ngôn ngữ. |
-| 10 | Bộ xếp hạng bài | Tự viết; `pokersolver` là devDependency để đối chiếu trong test. 300 lần mô phỏng < 50 ms trên điện thoại. |
+| 10 | Bộ xếp hạng bài | Tự viết, không dùng thư viện poker ngoài. Test đối chiếu với một bộ chấm tham chiếu chậm nhưng hiển nhiên, viết ngay trong test. 300 lần mô phỏng < 50 ms trên điện thoại. |
 | 11 | Điện thoại | Lớp phủ "Hãy xoay ngang" khi cầm dọc; xin toàn màn hình ở lần chạm đầu (trừ iOS Safari). |
 | 12 | Lưu trữ | localStorage: ngôn ngữ, âm thanh (để sẵn), thống kê thắng/thua theo mức khó; mọi truy cập bọc try/catch. |
 | 13 | Ván hòa | Hòa do poker hòa bài và hòa do kéo toàn Safe gộp chung một con số. |
@@ -51,20 +51,20 @@ Nhánh: `feat/setup-project`.
 
 Nhánh: `feat/core-game-mechanics`. Task chi tiết: [docs/tasks/phase-1.md](tasks/phase-1.md).
 
-- [ ] `rng.ts`: PRNG có hạt giống (ví dụ mulberry32), hàm `shuffle`, `int`, `pick`
-- [ ] `cards.ts`: kiểu lá bài, bộ 52 lá, xáo bằng `rng`
-- [ ] `handEvaluator.ts`: bộ 5 lá mạnh nhất từ 7 lá, so sánh hai tay theo 10 hạng (Thùng phá sảnh lớn > Thùng phá sảnh > Tứ quý > Cù lũ > Thùng > Sảnh > Sám cô > Hai đôi > Một đôi > Mậu thầu), tính cả sảnh A-2-3-4-5
-- [ ] Test `handEvaluator`: các trường hợp biên viết tay + đối chiếu `pokersolver` trên ~10.000 tay ngẫu nhiên có hạt giống; benchmark tốc độ
-- [ ] `betting.ts`: mức chung 1–6, hành động Xem bài / Tăng / Theo / Bỏ / Tất tay, mỗi người tăng tối đa 1 lần mỗi vòng (Tất tay tính là tăng), hàm `legalActions`, ghi lại mức mỗi người đã theo
-- [ ] `levers.ts`: số cần Nguy hiểm ngẫu nhiên đều 1–5, xáo vị trí, kéo cần, mỗi cần kéo một lần, dừng khi trúng Nguy hiểm
-- [ ] `match.ts`: BEST OF 3/5/7, tỉ số, số ván hòa, điều kiện kết thúc
-- [ ] `gameState.ts` + `rules.ts`: các phase `deal`, `betting`, `challenge`, `roundResult`, `matchOver`; `applyAction(state, action)` trả `{ state, events }`
-- [ ] Luật: người đi trước ngẫu nhiên mỗi ván; Bỏ kéo theo mức mình đã theo (tối thiểu 1); Tất tay được Theo → lật hết lá chung; poker hòa bài → hòa ván, không kéo cần
-- [ ] Test chuyển trạng thái cho từng nhánh: bỏ ở lượt đầu, bỏ sau tăng, tất tay theo/bỏ, so bài hòa, kéo trúng Nguy hiểm, kéo toàn Safe, kết thúc trận
-- [ ] Test tái hiện: cùng hạt giống → cùng chuỗi sự kiện
-- [ ] `scripts/sim.ts`: hai bot ngẫu nhiên tự đấu, `--seed`, `--mode 3|5|7`, in log sự kiện
-- [ ] `scripts/play.ts`: chơi tương tác bằng readline với bot ngẫu nhiên
-- [ ] Chạy cả hai bằng `tsx` qua script npm
+- [x] `rng.ts`: PRNG có hạt giống (ví dụ mulberry32), hàm `shuffle`, `int`, `pick`
+- [x] `cards.ts`: kiểu lá bài, bộ 52 lá, xáo bằng `rng`
+- [x] `handEvaluator.ts`: bộ 5 lá mạnh nhất từ 7 lá, so sánh hai tay theo 10 hạng (Thùng phá sảnh lớn > Thùng phá sảnh > Tứ quý > Cù lũ > Thùng > Sảnh > Sám cô > Hai đôi > Một đôi > Mậu thầu), tính cả sảnh A-2-3-4-5
+- [x] Test `handEvaluator`: các trường hợp biên viết tay + đối chiếu bộ chấm tham chiếu viết trong test (duyệt 21 tổ hợp 5 lá, không dùng chung logic với `evaluate7`) trên ~10.000 cặp tay có hạt giống; benchmark tốc độ
+- [x] `betting.ts`: mức chung 1–6, hành động Xem bài / Tăng / Theo / Bỏ / Tất tay, mỗi người tăng tối đa 1 lần mỗi vòng (Tất tay tính là tăng), hàm `legalActions`, ghi lại mức mỗi người đã theo
+- [x] `levers.ts`: số cần Nguy hiểm ngẫu nhiên đều 1–5, xáo vị trí, kéo cần, mỗi cần kéo một lần, dừng khi trúng Nguy hiểm
+- [x] `match.ts`: BEST OF 3/5/7, tỉ số, số ván hòa, điều kiện kết thúc
+- [x] `gameState.ts` + `rules.ts`: các phase `deal`, `betting`, `challenge`, `roundResult`, `matchOver`; `applyAction(state, action)` trả `{ state, events }`
+- [x] Luật: người đi trước ngẫu nhiên mỗi ván; Bỏ kéo theo mức mình đã theo (tối thiểu 1); Tất tay được Theo → lật hết lá chung; poker hòa bài → hòa ván, không kéo cần
+- [x] Test chuyển trạng thái cho từng nhánh: bỏ ở lượt đầu, bỏ sau tăng, tất tay theo/bỏ, so bài hòa, kéo trúng Nguy hiểm, kéo toàn Safe, kết thúc trận
+- [x] Test tái hiện: cùng hạt giống → cùng chuỗi sự kiện
+- [x] `scripts/sim.ts`: hai bot ngẫu nhiên tự đấu, `--seed`, `--mode 3|5|7`, in log sự kiện
+- [x] `scripts/play.ts`: chơi tương tác bằng readline với bot ngẫu nhiên
+- [x] Chạy cả hai bằng `tsx` qua script npm
 
 **Xong khi:** chạy hết được một trận bằng dòng lệnh ở cả hai chế độ, toàn bộ test lõi xanh.
 

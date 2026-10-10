@@ -29,7 +29,10 @@ Lõi là TypeScript thuần, chạy được trên Node, để sau này chuyển
 | `levers.ts` | Xem skill `lever-challenge` |
 | `match.ts` | Chế độ, tỉ số, số ván hòa, `isMatchOver`, `matchWinner` |
 | `gameState.ts` | Kiểu `GameState`, `Action`, `GameEvent`, `PlayerView`, `Seat` |
-| `rules.ts` | `createMatch`, `applyAction`, `legalActions`, `viewFor` |
+| `rules.ts` | `createMatch`, `applyAction`, `availableActions`, `currentActor`, `viewFor` |
+| `errors.ts` | `IllegalActionError` |
+
+Test của lõi nằm ở `tests/core/`, helper dùng chung ở `tests/testing.ts` (xem skill `testing-vitest`).
 
 ## rng.ts
 
@@ -49,7 +52,7 @@ export class Rng {
   int(n: number): number {
     return Math.floor(this.next() * n); // 0..n-1
   }
-  // pick(arr), shuffle(arr) (Fisher-Yates từ cuối mảng, trả mảng mới)...
+  // range(min, max) (gồm cả hai đầu), pick(arr), shuffle(arr) (Fisher-Yates từ cuối mảng, trả mảng mới)
 }
 ```
 
@@ -86,7 +89,8 @@ export type Action =
   | { type: 'pull'; seat: Seat; lever: number }; // phase challenge, chỉ người thua poker
 ```
 
-- **Hành động không hợp lệ thì `throw`** (class `IllegalActionError`), không trả state cũ. Scene và bot chỉ gửi hành động lấy từ `legalActions`, nên throw là dấu hiệu lỗi lập trình.
+- **Hành động không hợp lệ thì `throw`** (class `IllegalActionError`), không trả state cũ. Scene, script và bot chỉ gửi hành động lấy từ `availableActions(state)` (hoặc `view.legal`), nên throw là dấu hiệu lỗi lập trình.
+- `currentActor(state)` trả ghế phải hành động (`betting`: `toAct`, `challenge`: `loser`), hoặc `null` khi bước tiếp theo là `deal` hay trận đã xong.
 - `deal` gộp việc dọn ván cũ, chia ván mới và bắt đầu vòng trước flop. Không có hành động "nextRound" riêng.
 - Một hành động có thể kéo theo nhiều bước tự động. Ví dụ Theo ở river dẫn tới so bài rồi vào `challenge`; Tất tay được Theo dẫn tới lật hết lá chung rồi so bài. Tất cả nằm trong cùng một `events`.
 
@@ -108,6 +112,7 @@ export interface GameState {
   revealed: 0 | 3 | 4 | 5;
   betting: BettingState | null; // skill poker-engine
   challenge: ChallengeState | null; // skill lever-challenge
+  showdown: ShowdownResult | null; // values, ranks (HandRank), winner; null nếu ván kết thúc do Bỏ
   lastResult: RoundResult | null;
 }
 ```
@@ -143,7 +148,7 @@ export interface GameState {
 
 `viewFor(state, seat)` là thứ duy nhất bot (và sau này client online) được nhận. Chỉ chứa thông tin công khai và bài của chính ghế đó.
 
-- **Có:** `me`, `phase`, `mode`, `winsNeeded`, `wins`, `draws`, `round`, `firstActor`, bài riêng của `me`, `board.slice(0, revealed)`, toàn bộ trạng thái cược công khai (`street`, `level`, `called`, `raisedThisStreet`, `toAct`), `legal: BetMove[]`, trạng thái thử thách (`loser`, `pulls`, `pulledCount`, mỗi cần là `'unknown' | 'safe' | 'danger'`), bài đối thủ **chỉ khi đã so bài**.
+- **Có:** `me`, `phase`, `mode`, `winsNeeded`, `wins`, `draws`, `round`, `firstActor`, bài riêng của `me`, `board.slice(0, revealed)`, toàn bộ trạng thái cược công khai (`street`, `level`, `called`, `raisesThisStreet`, `toAct`), `legal: BetMove[]` (rỗng khi chưa tới lượt), trạng thái thử thách (`loser`, `pulls`, `pulledCount`, mỗi cần là `'unknown' | 'safe' | 'danger'`), `showdown: { opponentHole, myRank, opponentRank, winner }` **chỉ khi đã so bài**, `lastResult`.
 - **Không bao giờ có:** `rngState`, bộ bài còn lại, `board` chưa lật, bài đối thủ trước khi so, trạng thái ẩn của cần chưa kéo.
 
 Tạo `PlayerView` là một kiểu riêng, không phải `Partial<GameState>`, để TypeScript không cho lỡ thêm trường ẩn.

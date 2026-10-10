@@ -18,13 +18,13 @@ export const rankOf = (c: Card) => c >> 2;
 export const suitOf = (c: Card) => c & 3;
 ```
 
-- `cardToString(c)` cho ra `'As'`, `'Td'`, `'2c'`, cùng định dạng với `pokersolver`.
+- `cardToString(c)` cho ra `'As'`, `'Td'`, `'2c'`, theo ký hiệu ngắn chuẩn của poker.
 - `parseCards('As Kd 7h')` trả `Card[]` và throw nếu chuỗi sai hoặc trùng lá. Hàm này dùng cho test và `scripts/`, không dùng cho đường chơi chính.
 - `newDeck()` trả 52 lá theo thứ tự cố định; xáo bằng `rng.shuffle`, không xáo bên trong `cards.ts`.
 
 ## handEvaluator.ts
 
-Quyết định #10: **tự viết**; `pokersolver` chỉ là devDependency để đối chiếu trong test. Yêu cầu tốc độ: equity 300 lần mô phỏng (khoảng 600 lần chấm 7 lá) dưới 50 ms trên điện thoại.
+Quyết định #10: **tự viết, không dùng thư viện poker ngoài** (kể cả trong test). Yêu cầu tốc độ: equity 300 lần mô phỏng (khoảng 600 lần chấm 7 lá) dưới 50 ms trên điện thoại.
 
 ### Thứ tự hạng tay, từ mạnh đến yếu (luật cốt lõi)
 
@@ -122,13 +122,19 @@ export interface BettingState {
   street: Street;
   level: number;
   called: [number, number]; // mức mỗi ghế đã theo
-  raisedThisStreet: [boolean, boolean];
+  raisesThisStreet: [number, number]; // so với BETTING.maxRaisesPerPlayerPerStreet
   actedThisStreet: [boolean, boolean];
   toAct: Seat;
 }
 ```
 
+### Áp dụng hành động
+
+`applyBet(betting, seat, move, firstActor)` trả `BetOutcome`, một trong: `continue`, `nextStreet` (đã sang vòng mới, chưa lật lá), `runout` (cả hai đã theo ở `maxLevel` trước river), `showdown` (hết river), `fold` (kèm `loser`, `pulls`). `rules.ts` chỉ rẽ nhánh theo `kind`; lật lá và so bài là việc của `rules.ts`.
+
 ### Hành động hợp lệ (`legalActions`)
+
+`legalActions` trả theo thứ tự thanh hành động: `check`, `raise`, `call`, `fold`, `allIn` (lọc những nước hợp lệ).
 
 Với ghế `p` đang tới lượt, `facing = called[p] < level`:
 
@@ -136,8 +142,8 @@ Với ghế `p` đang tới lượt, `facing = called[p] < level`:
 | --- | --- | --- |
 | `check` (Xem bài) | `!facing` | Không đổi mức |
 | `call` (Theo) | `facing` | `called[p] = level` |
-| `raise` (Tăng) | `!raisedThisStreet[p] && level < maxLevel` | `level += raiseStep`, `called[p] = level` |
-| `allIn` (Tất tay) | `!raisedThisStreet[p] && level < maxLevel` | `level = maxLevel`, `called[p] = level` |
+| `raise` (Tăng) | `raisesThisStreet[p] < maxRaisesPerPlayerPerStreet && level < maxLevel` | `level += raiseStep`, `called[p] = level` |
+| `allIn` (Tất tay) | như Tăng | `level = maxLevel`, `called[p] = level` |
 | `fold` (Bỏ) | Luôn hợp lệ khi tới lượt | Kết thúc poker, `p` thua |
 
 - Được tăng lại khi đang bị tăng, miễn là mình chưa tăng trong vòng này. Ví dụ A tăng lên 2, B tăng lên 3, thì A chỉ còn Theo hoặc Bỏ.
@@ -145,20 +151,20 @@ Với ghế `p` đang tới lượt, `facing = called[p] < level`:
 
 ### Khi nào hết một vòng
 
-Hết vòng khi **cả hai đã hành động** trong vòng **và** `called[0] === called[1] === level`. Sang vòng mới thì lật lá (3, 1, 1), đặt lại `raisedThisStreet` và `actedThisStreet`, và `toAct = firstActor`. Hết vòng `river` thì so bài.
+Hết vòng khi **cả hai đã hành động** trong vòng **và** `called[0] === called[1] === level`. Sang vòng mới thì lật lá (3, 1, 1), đặt lại `raisesThisStreet` và `actedThisStreet`, và `toAct = firstActor`. Hết vòng `river` thì so bài.
 
 ### Helper cho ActionBar
 
 ActionBar cần hiện số cần sẽ phải kéo nếu thua:
 
-- `foldPulls(betting, seat)`: số cần phải kéo nếu Bỏ ngay bây giờ.
+- `foldPulls(betting, seat)`: số cần phải kéo nếu Bỏ ngay bây giờ. Chỉ cần trường `called`, nên dùng được cả với `view.betting`.
 - Nếu Theo rồi thua khi so bài thì kéo `level` (hoặc cao hơn nếu sau đó còn bị tăng).
 
 Các helper này là hàm thuần trong `betting.ts`, scene chỉ gọi và hiển thị.
 
 ## Checklist trước khi xong
 
-- [ ] Có test cho từng dòng trong bảng trường hợp biên và đối chiếu `pokersolver` trên khoảng 10.000 tay có hạt giống (xem skill `testing-vitest`).
+- [ ] Có test cho từng dòng trong bảng trường hợp biên và đối chiếu bộ chấm tham chiếu trên khoảng 10.000 cặp tay có hạt giống (xem skill `testing-vitest`).
 - [ ] Có test `legalActions` cho: lượt đầu, bị tăng, bị tăng lại, mức đã là 6, đã dùng lượt tăng.
 - [ ] Có test Bỏ sau khi bị tăng kéo đúng mức đã theo, và Bỏ ngay lượt đầu kéo 1.
 - [ ] Không cấp phát mảng trong vòng lặp nóng của `evaluate7`.

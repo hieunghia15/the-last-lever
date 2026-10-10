@@ -1,15 +1,15 @@
 ---
 name: testing-vitest
-description: "Dùng khi viết hoặc sửa test Vitest cho The Last Lever: test lõi luật chơi, bộ xếp hạng bài (kèm đối chiếu pokersolver), cược, cần gạt, bot, test hạt giống tái hiện, test hàm thuần, test thống kê xác suất, benchmark, kiểm tra config. Triggers on: test, Vitest, *.test.ts, kiểm thử, unit test, pokersolver, snapshot, benchmark, seed, flaky."
+description: "Dùng khi viết hoặc sửa test Vitest cho The Last Lever: test lõi luật chơi, bộ xếp hạng bài (kèm đối chiếu bộ chấm tham chiếu), cược, cần gạt, bot, test hạt giống tái hiện, test hàm thuần, test thống kê xác suất, benchmark, kiểm tra config. Triggers on: test, Vitest, *.test.ts, kiểm thử, unit test, reference evaluator, snapshot, benchmark, seed, flaky."
 ---
 
 # Kiểm thử bằng Vitest
 
-Vitest chạy trong môi trường `node` (`vite.config.ts`), chỉ quét `src/**/*.test.ts`. Lệnh: `npm test` (chạy một lần), `npm run test:watch`.
+Vitest chạy trong môi trường `node` (`vite.config.ts`), chỉ quét `tests/**/*.test.ts`. Lệnh: `npm test` (chạy một lần), `npm run test:watch`.
 
 ## Quy ước
 
-- Test **đặt cạnh file nguồn**: `src/core/handEvaluator.ts` đi với `src/core/handEvaluator.test.ts`.
+- Test nằm trong **`tests/`, phản chiếu cấu trúc `src/`**: `src/core/handEvaluator.ts` đi với `tests/core/handEvaluator.test.ts`. Import code bằng đường dẫn tương đối (`../../src/core/...`). `tsconfig.json` gồm cả `src` và `tests`, nên test cũng được typecheck và lint.
 - Import tường minh: `import { describe, expect, it } from 'vitest';` (không bật globals).
 - Tên `describe` và `it` viết bằng tiếng Anh, mô tả hành vi: `it('pulls the level the folder had called, not the raised one')`.
 - Phải qua `typecheck`, `lint` (ESLint có kiểm tra kiểu cũng chạy trên test) và `format:check`.
@@ -19,11 +19,11 @@ Vitest chạy trong môi trường `node` (`vite.config.ts`), chỉ quét `src/*
 
 - **Mọi thứ ngẫu nhiên đều có hạt giống.** Test không dùng `Math.random`. Hạt giống viết cứng trong test: `const SEED = 12345;`.
 - Test thống kê vẫn tất định nhờ hạt giống, nhưng chọn sai số rộng (±0,01 với 100.000 mẫu) để đổi thứ tự rút RNG không làm test vỡ.
-- **Không assert thời gian trên CI.** Benchmark dùng `it.skipIf(process.env.CI)(...)` với ngưỡng rộng, hoặc tách ra script chạy tay.
+- **Không assert thời gian trên CI.** Benchmark dùng `it.skipIf(isCI)(...)` (`isCI` từ `tests/testing.ts`, vì tsconfig không có kiểu Node) với ngưỡng rộng, hoặc tách ra script chạy tay.
 
 ## Helper dùng chung
 
-Đặt ở `src/core/testing.ts`. Chỉ test và `scripts/` được import file này, code chạy game thì không.
+Đặt ở `tests/testing.ts`. Code trong `src/` không được import từ `tests/` (ESLint chặn).
 
 ```ts
 export const cards = (s: string) => parseCards(s); // cards('As Kd 7h')
@@ -32,7 +32,9 @@ export function withCards(
   state: GameState,
   opts: { hole0?: string; hole1?: string; board?: string },
 ): GameState; // ghi đè bài sau deal
+export function withFirstActor(state: GameState, seat: Seat): GameState; // ai mở lời cả 4 vòng của ván hiện tại
 export function withLevers(state: GameState, pattern: string): GameState; // 'SSDSSD', sau khi vào challenge
+export const isCI: boolean;
 export function play(state: GameState, ...actions: Action[]): { state: GameState; events: GameEvent[] };
 ```
 
@@ -44,13 +46,13 @@ State là dữ liệu thuần, nên test được phép dựng tình huống b�
 
 - Dùng `it.each` theo bảng cho **mọi trường hợp biên** trong skill `poker-engine`: sảnh A-5, thùng phá sảnh A-5, không có sảnh vòng, hai bộ ba, ba đôi, tứ quý trên bàn, 6–7 lá cùng chất, bàn tự thắng...
 - Mỗi hạng tay (category) có ít nhất một ca, và có ca so kicker trong cùng hạng.
-- **Đối chiếu `pokersolver`** (devDependency, chưa có kiểu nên cần một file `declare module 'pokersolver'` tối thiểu): sinh khoảng 10.000 cặp tay 7 lá có hạt giống, so kết quả thắng/thua/hòa của `compareHands` với `Hand.winners([...])`. Khi sai, in ra bài để tái hiện.
+- **Đối chiếu bộ chấm tham chiếu** (không dùng thư viện poker ngoài). Trong test có `referenceScore(cards)`: duyệt cả 21 tổ hợp 5 lá, chấm mỗi tổ hợp bằng cách sắp nhóm rank (đơn giản, dễ kiểm bằng mắt, không dùng chung logic bitmask với `evaluate7`), trả `[category, ...rank so hòa]`. Sinh khoảng 10.000 cặp tay 7 lá có hạt giống, so **hạng tay** và **kết quả thắng/thua/hòa** của hai bên. Khi sai, in ra bài để tái hiện. Có thêm một test nhỏ kiểm chính bộ tham chiếu trên bậc thang 9 hạng.
 
 ```ts
-import { Hand } from 'pokersolver';
-const a = Hand.solve(handA.map(cardToString));
-const b = Hand.solve(handB.map(cardToString));
-const winners = Hand.winners([a, b]); // 2 phần tử nghĩa là hòa
+const [va, vb] = [evaluate7(a), evaluate7(b)];
+const [ra, rb] = [referenceScore(a), referenceScore(b)];
+expect(handCategory(va)).toBe(ra[0]);
+expect(Math.sign(compareHands(va, vb))).toBe(Math.sign(compareScores(ra, rb))); // 0 nghĩa là hòa
 ```
 
 ### 2. Cược (`betting.test.ts`)
@@ -94,7 +96,7 @@ it('replays identically from the same seed', () => {
 
 `dangerProbability` khớp bảng 1/2, 11/15, 17/20, 23/25, 29/30, 1 (`toBeCloseTo(x, 9)`); mô phỏng 100.000 lần khớp L(m) trong ±0,01; `d` phân phối đều 1–5.
 
-### 6. Bot (`src/ai/*.test.ts`)
+### 6. Bot (`tests/ai/*.test.ts`)
 
 `move` luôn thuộc `view.legal`; không Bỏ khi Xem bài được; công thức Theo/Bỏ với equity cố định truyền vào; cùng hạt giống cho cùng quyết định; equity của AA trước flop khoảng 0,85 ± 0,03.
 
@@ -102,7 +104,7 @@ it('replays identically from the same seed', () => {
 
 `viewFor` trước khi so bài không có bài đối thủ; không có `rngState`, bộ bài, lá chung chưa lật; cần chưa kéo là `'unknown'`. Kiểm tra cả tập khóa: `expect(Object.keys(view).sort()).toEqual([...])`, để thêm trường mới thì phải sửa test có chủ ý.
 
-### 8. Config (`src/config.test.ts`)
+### 8. Config (`tests/config.test.ts`)
 
 `1 ≤ minDanger ≤ maxDanger ≤ count − 1`; `maxLevel ≤ LEVERS.count`; `startLevel ≤ maxLevel`; ngưỡng bot nằm trong 0–1 và ngưỡng Tăng < ngưỡng Tất tay.
 
