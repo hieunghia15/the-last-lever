@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { en } from './en';
-import { getLocale, isLocale, setLocale, t } from './index';
-import { vi } from './vi';
+import { en } from '../../src/i18n/en';
+import { getLocale, isLocale, setLocale, t } from '../../src/i18n';
+import { vi } from '../../src/i18n/vi';
 
 afterEach(() => setLocale('vi'));
 

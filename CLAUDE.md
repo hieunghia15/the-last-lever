@@ -35,6 +35,7 @@ src/
   i18n/      vi.ts (bản gốc), en.ts, t()
   config.ts  mọi tham số cân bằng và bố cục
 scripts/     script chạy bằng dòng lệnh (sim, play, balance)
+tests/       test Vitest, phản chiếu cấu trúc src/ (tests/core, tests/ai...), helper ở tests/testing.ts
 ```
 
 Các quy tắc bắt buộc:
@@ -54,6 +55,7 @@ Các luật này đã được chốt trong `docs/plan.md`:
 - **Bỏ bài:** kéo theo mức người đó **đã theo**, không phải mức vừa bị tăng lên, và tối thiểu 1 cần. Ví dụ: mức đang là 2, đối thủ tăng lên 3, người chơi bỏ bài thì kéo 2 cần.
 - **Người đi trước:** mỗi ván chọn ngẫu nhiên. Người đi trước mở lời ở cả 4 vòng cược. Luật này không có blind.
 - **Giới hạn tăng:** mỗi người tăng tối đa 1 lần mỗi vòng, và Tất tay cũng tính là lần tăng đó. Tất tay lên thẳng mức 6. Nếu Tất tay được Theo thì tự lật hết lá chung và so bài.
+- **Thứ tự hạng tay (mạnh → yếu):** Thùng phá sảnh lớn > Thùng phá sảnh > Tứ quý > Cù lũ > Thùng > Sảnh > Sám cô > Hai đôi > Một đôi > Mậu thầu. Chất không bao giờ phân thắng thua. Cách so khi cùng hạng nằm trong skill `poker-engine`.
 - **Poker hòa bài:** ván hòa, không ai phải kéo cần.
 - **Cần gạt:** số cần Nguy hiểm được chọn ngẫu nhiên đều từ 1 đến 5 trong 6 cần. Gặp Nguy hiểm thì dừng kéo ngay. Kéo đủ số mà toàn Safe thì ván hòa. Hai loại hòa gộp chung một con số.
 - **Bot không có biểu cảm.** Nhân vật là một hình tĩnh. Bot gây nhiễu bằng bong bóng thoại có thể nói dối và bằng những ván lừa.
@@ -62,7 +64,7 @@ Các luật này đã được chốt trong `docs/plan.md`:
 
 - **Cấu hình TypeScript:** bật `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`. Vì `verbatimModuleSyntax`, import kiểu phải viết `import type`.
 - **Import Phaser** bằng default import: `import Phaser from 'phaser'`.
-- **Test** đặt cạnh file nguồn, đặt tên `*.test.ts`, nằm trong `src/`. Ưu tiên test bộ xếp hạng bài và các chuyển trạng thái của lõi.
+- **Test** nằm trong `tests/`, phản chiếu cấu trúc `src/` (`src/core/betting.ts` ↔ `tests/core/betting.test.ts`), đặt tên `*.test.ts`. Helper dùng chung ở `tests/testing.ts`. Code trong `src/` không được import từ `tests/` (ESLint chặn). Ưu tiên test bộ xếp hạng bài và các chuyển trạng thái của lõi.
 - **Định dạng Prettier:** nháy đơn, có dấu chấm phẩy, `trailingComma: all`, độ rộng dòng 100.
 - **Comment:** viết bằng tiếng Anh và ít, chỉ giải thích "vì sao". Thông báo lỗi lint và chuỗi giao diện có thể là tiếng Việt.
 - **Font:** Saira Stencil, tự host qua `@fontsource/saira-stencil`. `main.ts` chờ `document.fonts.load` xong mới tạo game, vì Phaser vẽ chữ một lần. Đổi font thì phải sửa cả `main.ts` lẫn `DISPLAY.fontFamily`.
