@@ -119,28 +119,28 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
 
 ## T6 – Lá bài (`CardSprite`)
 
-- [ ] `src/ui/cardFace.ts` (không import Phaser): `cardFace(card)` trả `{ rank: 'A' | 'K' | … | '10' | … , suit: '♠' | '♥' | '♦' | '♣', red: boolean }`.
-- [ ] `CardSprite`: Container vẽ mặt ngửa (nền trắng bo góc, giá trị và chất ở góc, chất lớn ở giữa, đỏ cho ♥♦) và mặt úp (nền đỏ sẫm, viền). Có các kích thước theo `LAYOUT`.
-- [ ] Hàm `flip(card)` lật bằng tween co `scaleX` về 0 rồi mở ra, trả `Promise`.
-- [ ] Kiểm tra Saira Stencil có ký tự ♠♥♦♣ không. Nếu không có, để `DISPLAY.fontFamily` rơi về font hệ thống cho riêng ký tự chất, hoặc vẽ chất bằng Graphics.
-- [ ] Test `cardFace` cho cả 52 lá: không trùng, `T` thành `10`, đúng màu.
+- [x] `src/ui/cardFace.ts` (không import Phaser): `cardFace(card)` trả `{ rank: 'A' | 'K' | … | '10' | … , suit: '♠' | '♥' | '♦' | '♣', red: boolean }`.
+- [x] `CardSprite`: Container vẽ mặt ngửa (nền trắng bo góc, giá trị và chất ở góc, chất lớn ở giữa, đỏ cho ♥♦) và mặt úp (nền đỏ sẫm, viền). Có các kích thước theo `LAYOUT`.
+- [x] Hàm `flip(card)` lật bằng tween co `scaleX` về 0 rồi mở ra, trả `Promise`.
+- [x] Kiểm tra Saira Stencil có ký tự ♠♥♦♣ không. Nếu không có, để `DISPLAY.fontFamily` rơi về font hệ thống cho riêng ký tự chất, hoặc vẽ chất bằng Graphics.
+- [x] Test `cardFace` cho cả 52 lá: không trùng, `T` thành `10`, đúng màu.
 
 ## T7 – Bố cục bàn bằng hình khối
 
-- [ ] `TableScene.create` vẽ tĩnh theo `LAYOUT`, từ xa đến gần:
+- [x] `TableScene.create` vẽ tĩnh theo `LAYOUT`, từ xa đến gần:
   - Nền tối, chỗ đối thủ là hình khối giữ chỗ (đầu tròn, thân chữ nhật) kèm biển tên và 2 lá úp.
   - Mặt bàn hình thang (hẹp ở xa, rộng ở gần) màu nỉ, viền gỗ.
   - 5 ô lá chung (viền đứt khi chưa lật) và nhãn vòng cược hiện tại.
   - `BetMeter` (`src/ui/BetMeter.ts`): nhãn "Mức cược" và 6 ô vuông, ô ≤ mức hiện tại sáng hổ phách. Có `setLevel(n)` kèm tween nhẹ.
   - Hai lá của người chơi ở góc dưới trái.
-- [ ] Viết hàm `render(view: PlayerView)` vẽ lại toàn bộ bàn từ view. T11 dùng nó để đồng bộ lại sau mỗi chuỗi sự kiện, tránh lệch giữa hình và state.
+- [x] Viết hàm `render(view: PlayerView)` vẽ lại toàn bộ bàn từ view. T11 dùng nó để đồng bộ lại sau mỗi chuỗi sự kiện, tránh lệch giữa hình và state.
 
 **Xong khi:** gọi `render` với view giả ở các vòng preflop, flop, river trông đúng bố cục trong UI brief.
 
 ## T8 – Thanh tỉ số (`ScoreBar`)
 
-- [ ] Dải trên cùng: bên trái "Bạn" với số chấm tròn bằng `winsNeeded`, bên phải tên bot, giữa là "Hòa: {n}". Chấm đặc = đã thắng, rỗng = chưa.
-- [ ] `update(wins, draws)` có tween nhẹ ở chấm vừa đặc.
+- [x] Dải trên cùng: bên trái "Bạn" với số chấm tròn bằng `winsNeeded`, bên phải tên bot, giữa là "Hòa: {n}". Chấm đặc = đã thắng, rỗng = chưa.
+- [x] `setScore(wins, draws)` có tween nhẹ ở chấm vừa đặc.
 
 ## T9 – Thanh hành động (`ActionBar`)
 
@@ -177,7 +177,7 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
   - `folded`: banner "{name} Bỏ bài — kéo {n} cần". Bài bot giữ úp (quyết định #7).
   - `challengeStarted`: `LeverPanel.open`.
   - `leverPulled`: `LeverPanel.reveal`.
-  - `roundEnded`: đóng bảng cần, banner kết quả (+1 chiến thắng / hòa), `ScoreBar.update`.
+  - `roundEnded`: đóng bảng cần, banner kết quả (+1 chiến thắng / hòa), `ScoreBar.setScore`.
   - `matchEnded`: chuyển sang T12.
 - [ ] Khóa input: `ActionBar` và `LeverPanel` chỉ mở khi `queue.busy === false` và `session.turn === 'human'`.
 - [ ] Khi hàng đợi rảnh (`onIdle`), xem `session.turn`:

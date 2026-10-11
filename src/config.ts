@@ -73,11 +73,11 @@ export const LAYOUT = {
 
   opponent: {
     x: 640,
-    headY: 116,
-    headRadius: 46,
-    body: { width: 200, height: 70, y: 168 },
-    nameY: 250,
-    cardsY: 290,
+    headY: 98,
+    headRadius: 42,
+    body: { width: 200, height: 64, y: 142 },
+    nameY: 226,
+    cardsY: 280,
     cardGap: 8,
   },
 
@@ -89,13 +89,13 @@ export const LAYOUT = {
     bottomLeft: 110,
     bottomRight: 1170,
   },
-  board: { y: 384, gap: 12 },
-  streetLabelY: 320,
-  betMeter: { y: 482, cell: 40, gap: 8, labelGap: 16 },
+  board: { y: 400, gap: 12 },
+  streetLabelY: 330,
+  betMeter: { y: 492, cell: 40, gap: 8, labelGap: 16 },
 
   playerCards: { x: 40, y: 486, overlap: 20 },
   playerToast: { x: 175, y: 462 },
-  opponentToast: { x: 790, y: 230 },
+  opponentToast: { x: 800, y: 280 },
   banner: { x: 360, y: 556, width: 896, height: 52 },
 
   actionBar: { x: 360, y: 620, width: 896, height: 84, gap: 12 },
