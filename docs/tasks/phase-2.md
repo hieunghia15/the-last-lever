@@ -110,10 +110,10 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
 
 ## T5 – Nút dùng chung và màn bắt đầu
 
-- [ ] `src/ui/Button.ts`: Container gồm hình chữ nhật bo góc, nhãn, phụ đề tùy chọn. Có `setEnabled(bool)` (mờ 30%, tắt input), kiểu chính (nền hổ phách) và phụ (nền gỗ, viền hổ phách). Vùng chạm cao ≥ 64 px. Dùng lại ở ActionBar, màn bắt đầu và nút "Ván tiếp".
-- [ ] `BootScene` tối giản: tên game, khẩu hiệu, 3 nút BEST OF 3 / 5 / 7. Bấm nút thì `scene.start('TableScene', { mode, seed })`.
-- [ ] Hạt giống: lấy từ `?seed=` nếu có, không thì sinh ngẫu nhiên ở lớp hiển thị. Ghi hạt giống ra `console.info` để tái hiện lỗi bằng `npm run sim -- --seed`.
-- [ ] Đăng ký `TableScene` (khung rỗng) trong `main.ts`.
+- [x] `src/ui/Button.ts`: Container gồm hình chữ nhật bo góc, nhãn, phụ đề tùy chọn. Có `setEnabled(bool)` (mờ 30%, tắt input), kiểu chính (nền hổ phách) và phụ (nền gỗ, viền hổ phách). Vùng chạm cao ≥ 64 px. Dùng lại ở ActionBar, màn bắt đầu và nút "Ván tiếp".
+- [x] `BootScene` tối giản: tên game, khẩu hiệu, 3 nút BEST OF 3 / 5 / 7. Bấm nút thì `scene.start('TableScene', { mode, seed })`.
+- [x] Hạt giống: lấy từ `?seed=` nếu có, không thì sinh ngẫu nhiên ở lớp hiển thị. Ghi hạt giống ra `console.info` để tái hiện lỗi bằng `npm run sim -- --seed`.
+- [x] Đăng ký `TableScene` (khung rỗng) trong `main.ts`.
 
 **Xong khi:** bấm một nút ở màn bắt đầu thì sang được `TableScene` trống, có chế độ và hạt giống đúng.
 

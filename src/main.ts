@@ -5,6 +5,7 @@ import Phaser from 'phaser';
 import { DISPLAY } from './config';
 import { isLocale, setLocale } from './i18n';
 import { BootScene } from './scenes/BootScene';
+import { TableScene } from './scenes/TableScene';
 
 // Phaser rasterises text once, so the web font must be ready before the first scene draws.
 async function loadFonts(): Promise<void> {
@@ -37,5 +38,5 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene],
+  scene: [BootScene, TableScene],
 });

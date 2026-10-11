@@ -6,6 +6,8 @@ export const DISPLAY = {
   backgroundColor: '#14100c',
   fontFamily: '"Saira Stencil", system-ui, sans-serif',
   minTouchSize: 64,
+  /** Text is rasterised at this multiple so it stays sharp when Scale.FIT enlarges the canvas. */
+  textResolution: 2,
 } as const;
 
 export const MATCH_MODES = {
