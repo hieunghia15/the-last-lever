@@ -1,5 +1,5 @@
 import { createRandomBot } from '../ai/baselineBots';
-import type { Bot } from '../ai/types';
+import type { Bot, BotTrace, TalkLabel } from '../ai/types';
 import type { MatchMode } from '../config';
 import type { BetMove } from '../core/betting';
 import { IllegalActionError } from '../core/errors';
@@ -11,6 +11,13 @@ export const BOT: Seat = 1;
 
 /** Who moves next: the table deals, the human acts, the bot acts, or the match is over. */
 export type Turn = 'deal' | 'human' | 'bot' | 'over';
+
+/** A bot move: its events, plus what it said (if anything) and why it moved, for debugging. */
+export interface BotTurn {
+  events: GameEvent[];
+  talk?: TalkLabel;
+  trace?: BotTrace;
+}
 
 export interface SessionOptions {
   mode: MatchMode;
@@ -63,13 +70,15 @@ export class MatchSession {
   }
 
   /** The bot sees only its own filtered view; its move is still checked by applyAction. */
-  botAct(): GameEvent[] {
+  botAct(): BotTurn {
     this.expectTurn('bot');
     const view = viewFor(this.state, BOT);
     if (this.state.phase === 'betting') {
-      return this.apply({ type: 'bet', seat: BOT, move: this.bot.chooseBet(view).move });
+      const { move, talk, trace } = this.bot.chooseBet(view);
+      return botTurn(this.apply({ type: 'bet', seat: BOT, move }), talk, trace);
     }
-    return this.apply({ type: 'pull', seat: BOT, lever: this.bot.chooseLever(view).lever });
+    const { lever, talk } = this.bot.chooseLever(view);
+    return botTurn(this.apply({ type: 'pull', seat: BOT, lever }), talk);
   }
 
   private expectTurn(turn: Turn): void {
@@ -84,4 +93,12 @@ export class MatchSession {
     this.state = state;
     return events;
   }
+}
+
+// exactOptionalPropertyTypes: leave the optional fields out rather than set them to undefined.
+function botTurn(events: GameEvent[], talk?: TalkLabel, trace?: BotTrace): BotTurn {
+  const turn: BotTurn = { events };
+  if (talk) turn.talk = talk;
+  if (trace) turn.trace = trace;
+  return turn;
 }

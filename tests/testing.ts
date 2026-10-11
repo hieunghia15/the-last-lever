@@ -1,8 +1,10 @@
 // Helpers for tests only. Game code under src/ may not import from tests/ (enforced by ESLint).
 // State is plain data, so tests may set up a situation by overwriting fields (cards, levers)
 // instead of hunting for a seed that happens to deal them.
+import { BETTING, MATCH_MODES, type MatchMode } from '../src/config';
+import { legalActions, type Street } from '../src/core/betting';
 import { parseCards, type Card } from '../src/core/cards';
-import type { Action, GameEvent, GameState, Seat } from '../src/core/gameState';
+import type { Action, GameEvent, GameState, PlayerView, Seat } from '../src/core/gameState';
 import { applyAction } from '../src/core/rules';
 
 /** cards('As Kd 7h') */
@@ -68,4 +70,56 @@ export function play(
     events.push(...result.events);
   }
   return { state: current, events };
+}
+
+export interface BettingSpot {
+  me?: Seat;
+  street?: Street;
+  level?: number;
+  /** Levels matched by [seat 0, seat 1]; defaults to both at `level` (nothing to call). */
+  called?: [number, number];
+  raises?: [number, number];
+  wins?: [number, number];
+  mode?: MatchMode;
+  round?: number;
+  hole?: string;
+  board?: string;
+}
+
+/**
+ * A PlayerView where it is `me`'s turn to bet, built by hand so bot tests can pin down an exact
+ * spot. `legal` comes from the real legalActions, so the view never offers an illegal move.
+ */
+export function bettingView(spot: BettingSpot = {}): PlayerView {
+  const me = spot.me ?? 1;
+  const level = spot.level ?? BETTING.startLevel;
+  const called = spot.called ?? [level, level];
+  const raisesThisStreet = spot.raises ?? [0, 0];
+  const mode = spot.mode ?? 'bo3';
+  const street = spot.street ?? 'preflop';
+  const legal = legalActions({
+    street,
+    level,
+    called,
+    raisesThisStreet,
+    actedThisStreet: [false, false],
+    toAct: me,
+  });
+  return {
+    me,
+    phase: 'betting',
+    mode,
+    winsNeeded: MATCH_MODES[mode].winsNeeded,
+    wins: spot.wins ?? [0, 0],
+    draws: 0,
+    round: spot.round ?? 1,
+    firstActor: me,
+    hole: cards(spot.hole ?? '7c 2d'),
+    board: spot.board ? cards(spot.board) : [],
+    betting: { street, level, called, raisesThisStreet, toAct: me },
+    legal,
+    challenge: null,
+    showdown: null,
+    lastResult: null,
+  };
 }

@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { BET_MOVES } from '../src/core/betting';
-import { BETTING, DISPLAY, LAYOUT, LEVERS, MATCH_MODES, type Rect } from '../src/config';
+import {
+  BETTING,
+  BOT,
+  DIFFICULTIES,
+  DIFFICULTY_PERSONALITY,
+  DISPLAY,
+  LAYOUT,
+  LEVERS,
+  MATCH_MODES,
+  PERSONALITIES,
+  type Rect,
+} from '../src/config';
 
 describe('config', () => {
   it('always leaves at least one Safe and one Danger lever', () => {
@@ -26,6 +37,37 @@ describe('config', () => {
     expect(MATCH_MODES.bo3.winsNeeded).toBe(2);
     expect(MATCH_MODES.bo5.winsNeeded).toBe(3);
     expect(MATCH_MODES.bo7.winsNeeded).toBe(4);
+  });
+
+  describe('bot', () => {
+    it('thinks for a positive, ordered range of time', () => {
+      expect(BOT.thinkMs.min).toBeGreaterThan(0);
+      expect(BOT.thinkMs.min).toBeLessThanOrEqual(BOT.thinkMs.max);
+      expect(BOT.talkMs).toBeGreaterThan(0);
+    });
+
+    it('keeps talk thresholds ordered and chances in [0, 1]', () => {
+      expect(BOT.talkWeakAt).toBeLessThan(BOT.talkStrongAt);
+      for (const value of [BOT.talkChance, BOT.talkWeakAt, BOT.talkStrongAt]) {
+        expect(value).toBeGreaterThanOrEqual(0);
+        expect(value).toBeLessThanOrEqual(1);
+      }
+    });
+
+    it.each(PERSONALITIES)('gives %s sane thresholds', (id) => {
+      const p = BOT.personalities[id];
+      expect(p.fear).toBeGreaterThan(0);
+      expect(p.raiseAt).toBeLessThan(p.allInAt);
+      for (const value of [p.raiseAt, p.allInAt, p.bluffRaise, p.bluffAllIn, p.lieRate]) {
+        expect(value).toBeGreaterThanOrEqual(0);
+        expect(value).toBeLessThanOrEqual(1);
+      }
+    });
+
+    it('plays a different personality at each difficulty', () => {
+      const picked = DIFFICULTIES.map((d) => DIFFICULTY_PERSONALITY[d]);
+      expect(new Set(picked).size).toBe(DIFFICULTIES.length);
+    });
   });
 
   describe('layout', () => {

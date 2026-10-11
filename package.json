@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sim": "tsx scripts/sim.ts",
-    "play": "tsx scripts/play.ts"
+    "play": "tsx scripts/play.ts",
+    "balance": "tsx scripts/balance.ts"
   },
   "dependencies": {
     "@fontsource/saira-stencil": "^5.3.0",

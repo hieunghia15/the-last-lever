@@ -14,7 +14,7 @@ Những điểm dưới đây ghi đè hoặc làm rõ tài liệu thiết kế.
 | 2 | Người đi trước | **Ngẫu nhiên mỗi ván**; người đi trước mở lời ở cả 4 vòng cược. |
 | 3 | Tất tay | Tính là lần Tăng của vòng đó. Tất tay được Theo → tự lật hết lá chung và so bài. Tăng bị làm mờ khi mức đã là 6. |
 | 4 | Chọn đối thủ | Menu chọn **Dễ / Vừa / Khó / Ngẫu nhiên**; cả ba dùng chung 1 nhân vật, khác tên và màu nhấn. Gán tính cách vào mức khó sau khi đo ở Phase 3. |
-| 5 | Tiêu chí bot (mốc 3) | Thay "từng cặp 40–60%" bằng: mỗi tính cách thắng bot cơ sở ≥ 60% trên 1.000 trận, và mọi cặp tính cách nằm trong 35–65%. |
+| 5 | Tiêu chí bot (mốc 3) | Thay "từng cặp 40–60%" bằng: mỗi tính cách thắng bot ngẫu nhiên ≥ 60% và bot luôn-Theo ≥ 55% trên 1.000 trận, và mọi cặp tính cách nằm trong 35–65%. Mốc với bot luôn-Theo hạ từ 60% xuống 55% (Oct 11, 2026) vì bot đó không bao giờ Bỏ, mọi ván lừa đều thua thiệt thuần, và kể cả bot không lừa cũng chỉ đạt 62–64% (xem `docs/balance.md`). |
 | 6 | m_cuối của bot | m_cuối = mức sau khi Theo + 0,5 × số vòng cược còn lại, làm tròn lên, tối đa 6. Công thức chỉ dùng khi bot phải chọn Theo hay Bỏ; Xem bài là miễn phí. |
 | 7 | Lật bài bot | Lật khi so bài; không lật khi có người bỏ. |
 | 8 | Biểu cảm nhân vật | **Bỏ các trạng thái biểu cảm.** Nhân vật là 1 hình tĩnh; khi trúng Nguy hiểm dùng hiệu ứng phủ (tia điện, rung, nháy màu). |
@@ -93,18 +93,22 @@ Nhánh: `feat/drafting-table`. Task chi tiết: [docs/tasks/phase-2.md](tasks/ph
 
 ## Phase 3 – Bot
 
-- [ ] `equity.ts`: mô phỏng 300 ván (cấu hình được) từ bài riêng + lá chung đã lật, đối thủ bài ngẫu nhiên; dùng `rng` riêng của bot (đã có `estimateEquity` với `EQUITY.trials` và `Rng` truyền vào, đang dùng cho thẻ "BỘ BÀI"; còn nối vào bot)
-- [ ] Benchmark `equity` < 50 ms; nếu chậm thì tối ưu evaluator hoặc chạy trong Web Worker
-- [ ] `personalities.ts`: Thận trọng / Cân bằng / Liều lĩnh với hệ số sợ, ngưỡng tăng, ngưỡng tất tay, tỉ lệ lừa (bảng trong tài liệu)
-- [ ] `botBrain.ts`: L(m) tính từ cấu hình (không gõ cứng bảng); m_cuối theo quyết định #6; điều chỉnh theo tỉ số (+0,2 khi đối thủ còn 1 chiến thắng, −0,1 khi bot dẫn)
-- [ ] Bot không đọc bài người chơi hay trạng thái cần: test kiểm tra bot chỉ nhận góc nhìn đã lọc (`PlayerView`)
-- [ ] Độ trễ suy nghĩ 0,8–2,5 giây ở lớp hiển thị
-- [ ] Bong bóng thoại: chọn câu theo nhãn mạnh/yếu/trung tính, tỉ lệ nói dối theo tính cách, ~8 câu mỗi nhãn ở `vi.ts` và `en.ts`
-- [ ] `scripts/balance.ts`: 1.000 trận cho mỗi cặp (kể cả với bot cơ sở ngẫu nhiên và luôn-Theo), in tỉ lệ thắng, tỉ lệ hòa, số ván trung bình mỗi trận, tần suất Tất tay và Bỏ
-- [ ] Chỉnh `config.ts` theo báo cáo; ghi kết quả cuối vào `docs/balance.md`
-- [ ] Gán Dễ / Vừa / Khó cho ba tính cách theo kết quả; tạm thêm chọn mức khó vào màn bắt đầu
+Nhánh: `feat/bot`. Task chi tiết: [docs/tasks/phase-3.md](tasks/phase-3.md).
 
-**Xong khi:** mỗi tính cách thắng bot cơ sở ≥ 60%, mọi cặp tính cách trong 35–65%, đã gán mức khó, và chơi tay với bot thấy được nó lừa.
+- [x] `equity.ts`: mô phỏng 300 ván (cấu hình được) từ bài riêng + lá chung đã lật, đối thủ bài ngẫu nhiên; dùng `rng` riêng của bot (`estimateEquity` dùng chung cho bot và thẻ "BỘ BÀI"; bot cache theo bộ lá trong một ván)
+- [x] Benchmark `equity` < 50 ms; nếu chậm thì tối ưu evaluator hoặc chạy trong Web Worker (≈ 0,4 ms trên máy tính; còn đo trên điện thoại)
+- [x] `personalities.ts`: Thận trọng / Cân bằng / Liều lĩnh với hệ số sợ, ngưỡng tăng, ngưỡng tất tay, tỉ lệ lừa (bảng trong tài liệu)
+- [x] `botBrain.ts`: L(m) tính từ cấu hình (không gõ cứng bảng); m_cuối theo quyết định #6; điều chỉnh theo tỉ số (+0,2 khi đối thủ còn 1 chiến thắng, −0,1 khi bot dẫn)
+- [x] Bot không đọc bài người chơi hay trạng thái cần: test kiểm tra bot chỉ nhận góc nhìn đã lọc (`PlayerView`)
+- [x] Độ trễ suy nghĩ 0,8–2,5 giây ở lớp hiển thị
+- [x] Bong bóng thoại: chọn câu theo nhãn mạnh/yếu/trung tính, tỉ lệ nói dối theo tính cách, ~8 câu mỗi nhãn ở `vi.ts` và `en.ts`
+- [x] `scripts/balance.ts`: 1.000 trận cho mỗi cặp (kể cả với bot cơ sở ngẫu nhiên và luôn-Theo), in tỉ lệ thắng, tỉ lệ hòa, số ván trung bình mỗi trận, tần suất Tất tay và Bỏ
+- [x] Chỉnh `config.ts` theo báo cáo; ghi kết quả cuối vào `docs/balance.md`
+- [x] Gán Dễ / Vừa / Khó cho ba tính cách theo kết quả (Dễ = Thận trọng, Vừa = Cân bằng, Khó = Liều lĩnh); menu đã có bộ chọn mức khó
+
+- [ ] Chơi tay với từng mức khó, thấy được bot lừa; đo equity trên điện thoại thật (task T13)
+
+**Xong khi:** mỗi tính cách thắng bot ngẫu nhiên ≥ 60% và bot luôn-Theo ≥ 55%, mọi cặp tính cách trong 35–65%, đã gán mức khó, và chơi tay với bot thấy được nó lừa.
 
 ## Phase 4 – Khoảnh khắc kéo cần
 

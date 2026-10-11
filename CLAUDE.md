@@ -21,6 +21,9 @@ Công nghệ: Phaser 4.2, TypeScript 6.0 (strict), Vite 8, Vitest, ESLint (có k
 | `npm run format` / `format:check` | Định dạng hoặc kiểm tra định dạng bằng Prettier (bỏ qua `*.md`) |
 | `npm test` | Chạy Vitest một lần |
 | `npm run build` | Typecheck rồi build ra thư mục `dist/` (web tĩnh) |
+| `npm run balance` | Cho các bot tự đấu, in báo cáo cân bằng dạng Markdown cho `docs/balance.md` (`--matches`, `--seed`, `--only`, `--set`) |
+
+Thêm `?seed=123` vào URL để chơi lại đúng một trận, thêm `?debug=bot` để in lý do bot hành động (equity, rủi ro, lừa, nói dối) ra console.
 
 Một việc chỉ được coi là xong khi `typecheck`, `lint`, `format:check` và `test` đều qua. CI (`.github/workflows/ci.yml`) chạy cùng các bước đó cho PR vào `main`.
 
