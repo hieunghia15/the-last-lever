@@ -30,6 +30,7 @@ Một việc chỉ được coi là xong khi `typecheck`, `lint`, `format:check`
 src/
   core/      luật chơi, TypeScript thuần
   ai/        bot: equity, botBrain, personalities
+  session/   điều phối một trận (MatchSession, EventQueue), TypeScript thuần, không Phaser
   scenes/    Phaser scenes, chỉ diễn hoạt
   ui/        component Phaser: CardSprite, ActionBar, LeverPanel...
   i18n/      vi.ts (bản gốc), en.ts, t()
@@ -42,7 +43,7 @@ Các quy tắc bắt buộc:
 
 - **`core/` và `ai/` không import Phaser, `scenes/`, `ui/` hay `i18n/`.** ESLint đã chặn việc này. Lõi phải chạy được trên Node để sau này chuyển lên server.
 - **Lõi là hàm thuần.** `applyAction(state, action)` trả về `{ state, events }` và không thay đổi trạng thái đầu vào. Các phase gồm `deal`, `betting`, `challenge`, `roundResult`, `matchOver`.
-- **Scene chỉ diễn hoạt.** Scene phát lần lượt `events` bằng tween và không tự quyết định luật.
+- **Scene chỉ diễn hoạt.** Scene phát lần lượt `events` bằng tween và không tự quyết định luật. Lượt người chơi và lượt bot đi qua `session/MatchSession`; scene chỉ gọi nó và phát `events` qua `EventQueue`. `session/` không import Phaser (ESLint chặn).
 - **Ngẫu nhiên phải có hạt giống.** Trong `core/` và `ai/`, mọi số ngẫu nhiên đi qua `core/rng.ts`, không dùng `Math.random`. Cùng hạt giống phải cho ra cùng chuỗi sự kiện.
 - **Bot chỉ được nhận góc nhìn đã lọc** (`PlayerView`). Bot không bao giờ thấy bài của người chơi hay trạng thái ẩn của cần gạt.
 - **Không gõ cứng con số cân bằng.** Mức cược, số cần, tỉ lệ, độ trễ, ngưỡng của bot đều nằm trong `src/config.ts`. Bảng xác suất L(m) phải được tính từ config, không viết tay.
