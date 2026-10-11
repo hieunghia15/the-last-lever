@@ -18,6 +18,14 @@ describe('i18n', () => {
     }
   });
 
+  it('uses the same placeholders in every language', () => {
+    const placeholders = (message: string) =>
+      [...message.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+    for (const key of Object.keys(vi) as (keyof typeof vi)[]) {
+      expect(placeholders(en[key]), key).toEqual(placeholders(vi[key]));
+    }
+  });
+
   it('defaults to Vietnamese and switches language', () => {
     expect(getLocale()).toBe('vi');
     expect(t('boot.tagline')).toBe(vi['boot.tagline']);

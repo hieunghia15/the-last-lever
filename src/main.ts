@@ -3,6 +3,7 @@ import '@fontsource/saira-stencil/700.css';
 import './style.css';
 import Phaser from 'phaser';
 import { DISPLAY } from './config';
+import { isLocale, setLocale } from './i18n';
 import { BootScene } from './scenes/BootScene';
 
 // Phaser rasterises text once, so the web font must be ready before the first scene draws.
@@ -15,6 +16,13 @@ async function loadFonts(): Promise<void> {
   } catch {
     // Fall back to the system font rather than block the game.
   }
+}
+
+// ?lang=en lets us try the English UI before the Phase 5 menu has a language switch.
+const lang = new URLSearchParams(location.search).get('lang');
+if (isLocale(lang)) {
+  setLocale(lang);
+  document.documentElement.lang = lang;
 }
 
 await loadFonts();
