@@ -113,7 +113,7 @@ export const LAYOUT = {
     height: 440,
     lever: { width: 110, height: 240, gap: 30, y: 230 },
     titleY: 186,
-    hintY: 530,
+    hintY: 548,
     dim: 0.7,
   },
 
@@ -130,7 +130,7 @@ export const TIMING = {
   panelFade: 220,
   /** Pause before a lever shows its colour; Phase 4 turns this into the real suspense beat. */
   leverReveal: 500,
-  afterLever: 400,
+  afterLever: 800,
   /** Fixed for the random bot; Phase 3 replaces it with a 0.8–2.5 s range. */
   botThink: 900,
 } as const;

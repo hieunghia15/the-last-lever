@@ -159,16 +159,16 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
 
 ## T10 – Bảng cần gạt bản thô (`LeverPanel`)
 
-- [ ] Bảng giữa màn hình, nền phía sau tối đi. Tiêu đề "{name} phải kéo {n} cần".
-- [ ] 6 hình chữ nhật đánh số 1–6 (cao ≥ 64 px): xám khi chưa kéo, xanh khi An toàn, đỏ khi Nguy hiểm.
-- [ ] `open(loser, pulls)`, `reveal(lever, danger)` trả `Promise` (ngừng `TIMING` ngắn rồi đổi màu), `close()`.
-- [ ] Chỉ nhận chạm khi người chơi là người thua và hàng đợi rảnh; cần đã kéo không nhận chạm. Gọi `onPull(lever)`.
-- [ ] Chưa làm: trượt vào, bộ đếm "đã kéo x / n", tia điện, rung (để Phase 4).
+- [x] Bảng giữa màn hình, nền phía sau tối đi. Tiêu đề "{name} phải kéo {n} cần".
+- [x] 6 hình chữ nhật đánh số 1–6 (cao ≥ 64 px): xám khi chưa kéo, xanh khi An toàn, đỏ khi Nguy hiểm.
+- [x] `open(loser, pulls)`, `reveal(lever, danger)` trả `Promise` (ngừng `TIMING` ngắn rồi đổi màu), `close()`.
+- [x] Chỉ nhận chạm khi người chơi là người thua và hàng đợi rảnh; cần đã kéo không nhận chạm. Gọi `onPull(lever)`.
+- [x] Chưa làm: trượt vào, bộ đếm "đã kéo x / n", tia điện, rung (để Phase 4).
 
 ## T11 – Phát sự kiện và vòng lặp trận
 
-- [ ] `TableScene.init({ mode, seed })` tạo `MatchSession` và `EventQueue`. Tự `deal()` ván đầu.
-- [ ] Ánh xạ mỗi `GameEvent` sang một hoạt ảnh trả `Promise` (dùng `tweens` và `time.delayedCall` của scene, không dùng `setTimeout`):
+- [x] `TableScene.init({ mode, seed })` tạo `MatchSession` và `EventQueue`. Tự `deal()` ván đầu.
+- [x] Ánh xạ mỗi `GameEvent` sang một hoạt ảnh trả `Promise` (dùng `tweens` và `time.delayedCall` của scene, không dùng `setTimeout`):
   - `roundStarted`: dọn bàn, banner "Ván {n} — {name} đi trước".
   - `holeCardsDealt`: chia 2 lá ngửa cho người chơi, 2 lá úp cho bot. Không bao giờ vẽ mặt bài bot ở bước này.
   - `betPlaced`: chữ ngắn cạnh người vừa đi ("Tăng lên 3"), `BetMeter.setLevel`.
@@ -179,21 +179,21 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
   - `leverPulled`: `LeverPanel.reveal`.
   - `roundEnded`: đóng bảng cần, banner kết quả (+1 chiến thắng / hòa), `ScoreBar.setScore`.
   - `matchEnded`: chuyển sang T12.
-- [ ] Khóa input: `ActionBar` và `LeverPanel` chỉ mở khi `queue.busy === false` và `session.turn === 'human'`.
-- [ ] Khi hàng đợi rảnh (`onIdle`), xem `session.turn`:
+- [x] Khóa input: `ActionBar` và `LeverPanel` chỉ mở khi `queue.busy === false` và `session.turn === 'human'`.
+- [x] Khi hàng đợi rảnh (`onIdle`), xem `session.turn`:
   - `'human'`: `render(view)`, mở input.
   - `'bot'`: hiện "Đang suy nghĩ…", chờ `TIMING.botThinkMs`, gọi `botAct()`, đẩy sự kiện vào hàng đợi. Bot kéo cần cũng đi đường này, mỗi cần một lần.
   - `'deal'`: hiện nút "Ván tiếp"; bấm thì `deal()`.
   - `'over'`: không làm gì (T12 lo).
-- [ ] Khi scene `shutdown`: `queue.dispose()`, gỡ listener.
+- [x] Khi scene `shutdown`: `queue.dispose()`, gỡ listener.
 
 **Xong khi:** chơi được nhiều ván liên tiếp, bấm loạn hay bấm nhanh liên tục không gây lỗi hoặc gửi hành động sai lượt (xem console không có `IllegalActionError`).
 
 ## T12 – Kết thúc trận và chơi lại
 
-- [ ] Khi `matchEnded`: khóa toàn bộ input, hiện dòng kết quả "Bạn thắng trận 2–1" hoặc "Bạn thua trận", số ván hòa.
-- [ ] Nút "Chơi lại" về `BootScene`. Kiểm tra chơi lại 2–3 lần liên tiếp không nhân đôi listener hay tween (log số listener nếu cần).
-- [ ] `ResultScene` thật để Phase 5.
+- [x] Khi `matchEnded`: khóa toàn bộ input, hiện dòng kết quả "Bạn thắng trận 2–1" hoặc "Bạn thua trận", số ván hòa.
+- [x] Nút "Chơi lại" về `BootScene`. Kiểm tra chơi lại 2–3 lần liên tiếp không nhân đôi listener hay tween (log số listener nếu cần).
+- [x] `ResultScene` thật để Phase 5.
 
 **Xong khi:** chơi hết một trận BEST OF 3 từ màn bắt đầu tới dòng kết quả rồi chơi lại được.
 
