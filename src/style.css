@@ -12,3 +12,32 @@ body {
   width: 100%;
   height: 100%;
 }
+
+/* Portrait phones only: a narrow desktop window has a fine pointer and never sees this. */
+#rotate-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 0 32px;
+  background: #14100c;
+  color: #f2a93b;
+  text-align: center;
+}
+
+#rotate-overlay p {
+  margin: 0;
+  color: #f3e6d0;
+  font-family: 'Saira Stencil', system-ui, sans-serif;
+  font-size: 20px;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate-overlay {
+    display: flex;
+  }
+}

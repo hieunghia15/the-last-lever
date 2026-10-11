@@ -18,16 +18,24 @@ describe('i18n', () => {
     }
   });
 
+  it('uses the same placeholders in every language', () => {
+    const placeholders = (message: string) =>
+      [...message.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+    for (const key of Object.keys(vi) as (keyof typeof vi)[]) {
+      expect(placeholders(en[key]), key).toEqual(placeholders(vi[key]));
+    }
+  });
+
   it('defaults to Vietnamese and switches language', () => {
     expect(getLocale()).toBe('vi');
-    expect(t('boot.tagline')).toBe(vi['boot.tagline']);
+    expect(t('menu.tagline')).toBe(vi['menu.tagline']);
     setLocale('en');
-    expect(t('boot.tagline')).toBe(en['boot.tagline']);
+    expect(t('menu.tagline')).toBe(en['menu.tagline']);
   });
 
   it('fills placeholders and keeps unknown ones', () => {
-    expect(t('boot.locale', { locale: 'vi' })).toBe('Ngôn ngữ: vi');
-    expect(t('boot.locale', {})).toBe('Ngôn ngữ: {locale}');
+    expect(t('menu.mode', { n: 5 })).toBe('BEST OF 5');
+    expect(t('lever.counter', { a: 1 })).toBe('Đã kéo 1 / {b}');
   });
 
   it('recognises supported locales only', () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BETTING, LEVERS, MATCH_MODES } from '../src/config';
+import { BET_MOVES } from '../src/core/betting';
+import { BETTING, DISPLAY, LAYOUT, LEVERS, MATCH_MODES, type Rect } from '../src/config';
 
 describe('config', () => {
   it('always leaves at least one Safe and one Danger lever', () => {
@@ -25,5 +26,57 @@ describe('config', () => {
     expect(MATCH_MODES.bo3.winsNeeded).toBe(2);
     expect(MATCH_MODES.bo5.winsNeeded).toBe(3);
     expect(MATCH_MODES.bo7.winsNeeded).toBe(4);
+  });
+
+  describe('layout', () => {
+    const inFrame = (r: Rect) =>
+      r.x >= 0 && r.y >= 0 && r.x + r.width <= DISPLAY.width && r.y + r.height <= DISPLAY.height;
+
+    it('keeps every zone inside the 1280×720 frame', () => {
+      const { playerCards, card, leverPanel } = LAYOUT;
+      const zones: Record<string, Rect> = {
+        topBar: LAYOUT.topBar,
+        banner: LAYOUT.banner,
+        actionBar: LAYOUT.actionBar,
+        felt: LAYOUT.felt,
+        leverPanel,
+        menuPanel: LAYOUT.menu.panel,
+        howTo: LAYOUT.howTo,
+        // Hole cards may dip below the bottom edge (they are cropped in the design), but
+        // their faces must start on screen.
+        playerCards: {
+          x: playerCards.x - card.large.width / 2,
+          y: playerCards.y - card.large.height / 2,
+          width: playerCards.step + card.large.width,
+          height: DISPLAY.height - (playerCards.y - card.large.height / 2),
+        },
+      };
+      for (const [name, zone] of Object.entries(zones)) expect(inFrame(zone), name).toBe(true);
+    });
+
+    it('makes every tap target at least the minimum touch size', () => {
+      const bar = LAYOUT.actionBar;
+      const buttonWidth = (bar.width - bar.gap * (BET_MOVES.length - 1)) / BET_MOVES.length;
+      expect(LAYOUT.button.height).toBeGreaterThanOrEqual(DISPLAY.minTouchSize);
+      expect(bar.height).toBeGreaterThanOrEqual(LAYOUT.button.height);
+      expect(buttonWidth).toBeGreaterThanOrEqual(DISPLAY.minTouchSize);
+      expect(LAYOUT.leverPanel.lever.width).toBeGreaterThanOrEqual(DISPLAY.minTouchSize);
+      expect(LAYOUT.leverPanel.lever.height).toBeGreaterThanOrEqual(DISPLAY.minTouchSize);
+    });
+
+    it('fits six levers in the panel and six stake cells on the table', () => {
+      const { leverPanel, betMeter, felt } = LAYOUT;
+      const levers =
+        LEVERS.count * leverPanel.lever.width + (LEVERS.count - 1) * leverPanel.lever.gap;
+      expect(levers).toBeLessThanOrEqual(leverPanel.width);
+      const cells = BETTING.maxLevel * betMeter.cell + (BETTING.maxLevel - 1) * betMeter.gap;
+      expect(cells).toBeLessThanOrEqual(felt.width);
+    });
+
+    it('keeps the action bar clear of the player cards', () => {
+      const { playerCards, card, actionBar } = LAYOUT;
+      const cardsRight = playerCards.x + playerCards.step + card.large.width / 2;
+      expect(cardsRight).toBeLessThanOrEqual(actionBar.x);
+    });
   });
 });

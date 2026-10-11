@@ -27,6 +27,8 @@ Những điểm dưới đây ghi đè hoặc làm rõ tài liệu thiết kế.
 | 15 | Cách chơi | 3–4 trang tĩnh có hình minh họa. |
 | 16 | Môi trường | Chỉ dev và chơi local (`vite`, `vite --host` để thử điện thoại qua LAN). Build ra web tĩnh, `base` cấu hình được, để sau deploy lên VPS. |
 | 17 | Mốc 6 cũ | Bỏ phần SDK cổng game; thử điện thoại và giảm dung lượng nhập vào Phase 5. |
+| 18 | Thẻ "BỘ BÀI" | Bàn chơi có thẻ bên trái (theo `stitch/`) cho người chơi xem bộ hiện tại, vị trí trong bảng xếp hạng, 5 lá tốt nhất, **Sức mạnh %** (equity với đối thủ ngẫu nhiên) và lá có thể nâng bộ. Chỉ dùng bài của người chơi và lá chung đã lật. |
+| 19 | Rời bàn giữa trận | Nút về menu ở góc phải thanh trên, hỏi xác nhận trước. Bàn chơi tạm dừng khi popup mở. Ván bị huỷ **không tính** vào thống kê thắng/thua. |
 
 **Để sau (ngoài các phase dưới):** âm thanh (nguồn CC0, ghi `CREDITS.md`), SDK cổng game (lớp `platform/` có adapter), deploy VPS, chơi online.
 
@@ -70,22 +72,28 @@ Nhánh: `feat/core-game-mechanics`. Task chi tiết: [docs/tasks/phase-1.md](tas
 
 ## Phase 2 – Bàn chơi bản nháp
 
-- [ ] `BootScene` tối giản → `TableScene` (Menu/Result tạm là nút bắt đầu và dòng kết quả)
-- [ ] Bố cục bằng hình khối theo tài liệu: tỉ số chấm tròn + số ván hòa, chỗ đối thủ + 2 lá úp, bàn hình thang, 5 ô lá chung, 6 ô mức cược, 2 lá của người chơi
-- [ ] `CardSprite` vẽ lá bằng hình + chữ (chưa cần atlas)
-- [ ] `ActionBar`: 5 nút, làm mờ nút không hợp lệ, Bỏ và Theo hiện số cần sẽ phải kéo; cao ≥ 64 px
-- [ ] `ScoreBar`
-- [ ] Hàng đợi sự kiện: `TableScene` phát lần lượt các sự kiện từ lõi bằng tween, khóa input khi đang diễn
-- [ ] `LeverPanel` bản thô: 6 hình chữ nhật, chạm để kéo, đổi màu xanh/đỏ (chưa có hiệu ứng)
-- [ ] Bot ngẫu nhiên trong các hành động hợp lệ, kéo cần ngẫu nhiên
-- [ ] Lớp phủ "Hãy xoay ngang"
-- [ ] Mọi chuỗi qua `t()`
+Nhánh: `feat/drafting-table`. Task chi tiết: [docs/tasks/phase-2.md](tasks/phase-2.md).
+
+- [x] `BootScene` tối giản → `TableScene` (Menu/Result tạm là nút bắt đầu và dòng kết quả)
+- [x] Bố cục bằng hình khối theo tài liệu: tỉ số chấm tròn + số ván hòa, chỗ đối thủ + 2 lá úp, bàn hình thang, 5 ô lá chung, 6 ô mức cược, 2 lá của người chơi
+- [x] `CardSprite` vẽ lá bằng hình + chữ (chưa cần atlas)
+- [x] `ActionBar`: 5 nút, làm mờ nút không hợp lệ, Bỏ và Theo hiện số cần sẽ phải kéo; cao ≥ 64 px
+- [x] `ScoreBar`
+- [x] Hàng đợi sự kiện: `TableScene` phát lần lượt các sự kiện từ lõi bằng tween, khóa input khi đang diễn
+- [x] `LeverPanel` bản thô: 6 hình chữ nhật, chạm để kéo, đổi màu xanh/đỏ (chưa có hiệu ứng)
+- [x] Bot ngẫu nhiên trong các hành động hợp lệ, kéo cần ngẫu nhiên
+- [x] Lớp phủ "Hãy xoay ngang"
+- [x] Mọi chuỗi qua `t()`
+- [x] Thẻ "BỘ BÀI" bên trái bàn theo thiết kế `stitch/` (quyết định #18): hạng tay, `xx/10`, 5 lá tốt nhất (lá phụ ghi "(Phụ)"), Sức mạnh %, Cơ hội
+- [x] Hai lá của người chơi hiện trọn trong khung 720 px (nâng lá và thẻ "BỘ BÀI")
+- [x] Nút về menu ở góc phải trên + popup xác nhận "Bạn có muốn huỷ ván và về trang chủ hay không?" (quyết định #19)
+- [x] Banner giữa bàn tự mờ sau vài giây thay vì nằm lại suốt ván
 
 **Xong khi:** bấm nút chơi hết một trận trên máy tính và trên điện thoại qua `vite --host`.
 
 ## Phase 3 – Bot
 
-- [ ] `equity.ts`: mô phỏng 300 ván (cấu hình được) từ bài riêng + lá chung đã lật, đối thủ bài ngẫu nhiên; dùng `rng` riêng của bot
+- [ ] `equity.ts`: mô phỏng 300 ván (cấu hình được) từ bài riêng + lá chung đã lật, đối thủ bài ngẫu nhiên; dùng `rng` riêng của bot (đã có `estimateEquity` với `EQUITY.trials` và `Rng` truyền vào, đang dùng cho thẻ "BỘ BÀI"; còn nối vào bot)
 - [ ] Benchmark `equity` < 50 ms; nếu chậm thì tối ưu evaluator hoặc chạy trong Web Worker
 - [ ] `personalities.ts`: Thận trọng / Cân bằng / Liều lĩnh với hệ số sợ, ngưỡng tăng, ngưỡng tất tay, tỉ lệ lừa (bảng trong tài liệu)
 - [ ] `botBrain.ts`: L(m) tính từ cấu hình (không gõ cứng bảng); m_cuối theo quyết định #6; điều chỉnh theo tỉ số (+0,2 khi đối thủ còn 1 chiến thắng, −0,1 khi bot dẫn)
@@ -101,7 +109,7 @@ Nhánh: `feat/core-game-mechanics`. Task chi tiết: [docs/tasks/phase-1.md](tas
 ## Phase 4 – Khoảnh khắc kéo cần
 
 - [ ] Bảng 6 cần trượt ra giữa màn hình khi vào `challenge`, nền phía sau tối đi
-- [ ] Bộ đếm "đã kéo x / n"
+- [x] Bộ đếm "đã kéo x / n"
 - [ ] Hoạt ảnh kéo cần, ngừng ~1 giây (cấu hình được) rồi mới lộ kết quả
 - [ ] Safe: đèn xanh; Nguy hiểm: đèn đỏ + tia điện (particles/graphics)
 - [ ] Người chơi trúng Nguy hiểm: lóe trắng, rung camera, tia điện tỏa ra mép màn hình
@@ -117,12 +125,12 @@ Nhánh: `feat/core-game-mechanics`. Task chi tiết: [docs/tasks/phase-1.md](tas
 - [ ] Nền quán rượu tối, bàn phối cảnh, đèn treo
 - [ ] Bảng cần gạt và cần ở 3 trạng thái (chưa kéo, Safe, Nguy hiểm)
 - [ ] Atlas bài 52 lá + mặt sau từ Kenney (CC0), ghi `CREDITS.md`
-- [ ] Nút, ô mức cược, chấm tỉ số vẽ thật
-- [ ] `BootScene` có thanh tiến độ tải
-- [ ] `MenuScene`: BEST OF 3/5/7, Dễ/Vừa/Khó/Ngẫu nhiên, Cách chơi, đổi ngôn ngữ; nút âm thanh ẩn cho tới khi có âm thanh
-- [ ] Màn Cách chơi: 3–4 trang tĩnh có hình
-- [ ] `ResultScene`: thắng/thua, tỉ số, số ván hòa, chơi lại, về menu
-- [ ] localStorage: ngôn ngữ, thống kê thắng/thua theo mức khó (bọc try/catch)
+- [x] Nút, ô mức cược, chấm tỉ số vẽ thật
+- [x] `BootScene` có thanh tiến độ tải
+- [x] `MenuScene`: BEST OF 3/5/7, Dễ/Vừa/Khó/Ngẫu nhiên, Cách chơi, đổi ngôn ngữ; nút âm thanh ẩn cho tới khi có âm thanh
+- [x] Màn Cách chơi: 3–4 trang tĩnh có hình
+- [x] `ResultScene`: thắng/thua, tỉ số, số ván hòa, chơi lại, về menu
+- [x] localStorage: ngôn ngữ, thống kê thắng/thua theo mức khó (bọc try/catch)
 - [ ] Xin toàn màn hình ở lần chạm đầu (bỏ qua trên iOS Safari)
 - [ ] Thử trên một điện thoại thật: chạm, xoay màn hình, tỉ lệ, chữ có dấu
 - [ ] Tối ưu dung lượng: nén PNG, atlas, kiểm tra kích thước build
@@ -134,5 +142,5 @@ Nhánh: `feat/core-game-mechanics`. Task chi tiết: [docs/tasks/phase-1.md](tas
 - **Cân bằng:** mức 1 đã 50% thua ván. Báo cáo ở Phase 3 sẽ cho biết có cần thu hẹp số cần Nguy hiểm (ví dụ 1–3) hay không; chỉ cần đổi `config.ts`.
 - **Tất tay quá mạnh:** theo dõi tần suất Tất tay và Bỏ trong báo cáo cân bằng.
 - **Bot dễ đoán khi không có biểu cảm:** bong bóng thoại nói dối và các ván lừa là hai công cụ chính; chỉnh tỉ lệ sau khi chơi thử.
-- **Hiệu năng equity trên điện thoại:** có phương án Web Worker hoặc giảm số lần mô phỏng.
+- **Hiệu năng equity trên điện thoại:** có phương án Web Worker hoặc giảm số lần mô phỏng. Thẻ "BỘ BÀI" cũng gọi equity mỗi khi bài đổi (có cache theo bộ lá), nên benchmark cần tính cả lượt đó.
 - **Chất lượng hình anime:** hình có thể thay sau mà không đổi code.
