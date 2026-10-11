@@ -14,11 +14,13 @@ import { BetMeter } from '../ui/BetMeter';
 import { Button } from '../ui/Button';
 import { addCardSlot, CardSprite } from '../ui/CardSprite';
 import { addBackdrop, addGlow, addLamp, drawGlowRect, drawPanel } from '../ui/decor';
+import { HandPanel } from '../ui/HandPanel';
 import { LeverPanel } from '../ui/LeverPanel';
 import { ScoreBar } from '../ui/ScoreBar';
 import { SpeechBubble } from '../ui/SpeechBubble';
 import { textStyle } from '../ui/text';
 import { feltTexture } from '../ui/textures';
+import type { ConfirmSceneData } from './ConfirmScene';
 import { bestOf, type ResultSceneData, type TableSceneData } from './flow';
 
 export type { TableSceneData } from './flow';
@@ -42,13 +44,19 @@ export class TableScene extends Phaser.Scene {
   private toasts!: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
   private banner!: Phaser.GameObjects.Container;
   private bannerText!: Phaser.GameObjects.Text;
+  private bannerTimer: Phaser.Time.TimerEvent | null = null;
   private actionBar!: ActionBar;
   private leverPanel!: LeverPanel;
+  private handPanel!: HandPanel;
   private nextButton!: Button;
+  private menuButton!: Button;
   private botCards: CardSprite[] = [];
   private boardCards: CardSprite[] = [];
   private playerCards: CardSprite[] = [];
   private revealed = 0;
+  /** Cards played back so far, which can trail the session's view while events animate. */
+  private hole: readonly Card[] = [];
+  private board: Card[] = [];
 
   constructor() {
     super('TableScene');
@@ -62,6 +70,9 @@ export class TableScene extends Phaser.Scene {
     this.boardCards = [];
     this.playerCards = [];
     this.revealed = 0;
+    this.bannerTimer = null;
+    this.hole = [];
+    this.board = [];
   }
 
   create(): void {
@@ -71,6 +82,8 @@ export class TableScene extends Phaser.Scene {
     // The lamp hangs in front of the opponent, as in the design.
     addLamp(this);
     this.drawBottomBar();
+    // Before the HUD, so the lever panel's dimmer covers it.
+    this.handPanel = new HandPanel(this);
     this.drawHud();
 
     this.queue = new EventQueue((event) => this.play(event));
@@ -145,6 +158,20 @@ export class TableScene extends Phaser.Scene {
     this.submit(() => this.session.deal());
   }
 
+  /** Freezes the table under a yes/no popup; leaving drops the match without recording it. */
+  private confirmQuit(): void {
+    const data: ConfirmSceneData = {
+      title: t('quit.title'),
+      message: t('quit.message'),
+      confirmLabel: t('match.menu'),
+      cancelLabel: t('quit.stay'),
+      onConfirm: () => this.scene.start('MenuScene'),
+      onCancel: () => this.scene.resume(),
+    };
+    this.scene.pause();
+    this.scene.launch('ConfirmScene', data);
+  }
+
   /** Saves the result to the per-difficulty record, then hands over to the result screen. */
   private finish(view: PlayerView): void {
     const won = view.wins[HUMAN] > view.wins[BOT];
@@ -161,6 +188,8 @@ export class TableScene extends Phaser.Scene {
       record: stats[difficulty],
     };
     this.actionBar.setVisible(false);
+    // The match is decided; pausing now would only stall the hand-over to the result screen.
+    this.menuButton.setEnabled(false);
     this.time.delayedCall(TIMING.banner / 2, () => {
       this.cameras.main.fadeOut(TIMING.panelFade);
       this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () =>
@@ -232,6 +261,7 @@ export class TableScene extends Phaser.Scene {
 
   private clearRound(): void {
     this.revealed = 0;
+    this.showHand([], []);
     [...this.boardCards, ...this.botCards, ...this.playerCards].forEach((c) => c.setVisible(false));
     this.betMeter.setLevel(BETTING.startLevel);
     this.setStreet('preflop');
@@ -239,6 +269,12 @@ export class TableScene extends Phaser.Scene {
 
   private setStreet(street: (typeof STREETS)[number]): void {
     this.streetLabel.setText(t('table.street', { street: t(`street.${street}`) }).toUpperCase());
+  }
+
+  private showHand(hole: readonly Card[], board: Card[]): void {
+    this.hole = hole;
+    this.board = board;
+    this.handPanel.setCards(hole, board);
   }
 
   private async dealHoles(mine: readonly Card[]): Promise<void> {
@@ -260,6 +296,7 @@ export class TableScene extends Phaser.Scene {
       ...this.playerCards.map((s, i) => deal(s, i * TIMING.deal)),
       ...this.botCards.map((s, i) => deal(s, (i + 0.5) * TIMING.deal)),
     ]);
+    this.showHand(mine, []);
   }
 
   private async revealBoardCard(card: Card): Promise<void> {
@@ -267,6 +304,7 @@ export class TableScene extends Phaser.Scene {
     if (!sprite) return;
     sprite.showBack().setVisible(true);
     await sprite.flip(card);
+    this.showHand(this.hole, [...this.board, card]);
   }
 
   private async toast(seat: Seat, text: string): Promise<void> {
@@ -282,11 +320,23 @@ export class TableScene extends Phaser.Scene {
     });
   }
 
+  /** Holds play for TIMING.banner, then lets the banner linger and fade without blocking. */
   private async showBanner(text: string): Promise<void> {
+    // Banners never overlap in the queue, so the only tween this can cut short is a fade-out.
+    this.bannerTimer?.remove();
+    this.tweens.killTweensOf(this.banner);
     this.bannerText.setText(text);
     this.banner.setAlpha(0).setVisible(true);
     await tweenAsync(this, { targets: this.banner, alpha: 1, duration: TIMING.panelFade });
     await wait(this, TIMING.banner);
+    this.bannerTimer = this.time.delayedCall(TIMING.bannerHold, () => {
+      this.tweens.add({
+        targets: this.banner,
+        alpha: 0,
+        duration: TIMING.panelFade,
+        onComplete: () => this.banner.setVisible(false),
+      });
+    });
   }
 
   // ── Rendering from state ───────────────────────────────────────────────────
@@ -313,6 +363,7 @@ export class TableScene extends Phaser.Scene {
       else sprite.showFace(card);
     });
     this.revealed = view.board.length;
+    this.showHand(view.hole, [...view.board]);
     this.boardCards.forEach((sprite, i) => {
       const card = view.board[i];
       sprite.setVisible(card !== undefined);
@@ -420,11 +471,29 @@ export class TableScene extends Phaser.Scene {
   }
 
   private drawHud(): void {
+    const m = LAYOUT.menuButton;
+    const top = LAYOUT.topBar;
     this.scoreBar = new ScoreBar(this, {
       winsNeeded: this.session.view.winsNeeded,
       bestOf: bestOf(this.setup.mode),
       names: this.names,
+      rightInset: m.width + m.gap,
     });
+    this.menuButton = new Button(
+      this,
+      top.x + top.width - top.margin - m.width / 2,
+      top.y + top.height / 2,
+      {
+        width: m.width,
+        height: m.height,
+        label: '',
+        icon: 'home',
+        variant: 'ghost',
+        radius: m.radius,
+        hitHeight: top.height,
+      },
+      () => this.confirmQuit(),
+    );
 
     const toastStyle = textStyle(LAYOUT.fontSize.button, COLORS.amber, true);
     const toast = () =>

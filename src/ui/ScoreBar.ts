@@ -14,6 +14,8 @@ export interface ScoreBarOptions {
   winsNeeded: number;
   bestOf: number;
   names: [string, string];
+  /** Room kept free at the right edge, e.g. for a button in the corner. */
+  rightInset?: number;
 }
 
 /** Top strip: a pip per win needed for each side, the draw counter and match format between. */
@@ -37,7 +39,7 @@ export class ScoreBar extends Phaser.GameObjects.Container {
       .setOrigin(0, 0.5);
     const right = scene.add
       .text(
-        bar.width - bar.margin,
+        bar.width - bar.margin - (opts.rightInset ?? 0),
         cy,
         opts.names[1].toUpperCase(),
         textStyle(size, COLORS.creamSoft),

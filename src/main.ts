@@ -6,6 +6,7 @@ import { DISPLAY } from './config';
 import { isLocale } from './i18n';
 import { applyLocale } from './locale';
 import { BootScene } from './scenes/BootScene';
+import { ConfirmScene } from './scenes/ConfirmScene';
 import { HowToScene } from './scenes/HowToScene';
 import { MenuScene } from './scenes/MenuScene';
 import { RankingsScene } from './scenes/RankingsScene';
@@ -42,5 +43,5 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, MenuScene, HowToScene, RankingsScene, TableScene, ResultScene],
+  scene: [BootScene, MenuScene, HowToScene, RankingsScene, TableScene, ResultScene, ConfirmScene],
 });

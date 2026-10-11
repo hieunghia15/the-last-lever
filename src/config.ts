@@ -35,6 +35,20 @@ export const LEVERS = {
   maxDanger: 5,
 } as const;
 
+/** Monte Carlo win-rate estimate; the bot reuses it in Phase 3. */
+export const EQUITY = {
+  trials: 300,
+} as const;
+
+/** The player's hand card on the table. */
+export const HAND_HINT = {
+  /** Win rate at or above which the hand is tagged strong, or fair. Below fair it is weak. */
+  strongAt: 0.65,
+  fairAt: 0.45,
+  /** Above this many distinct ranks the improve hint counts cards instead of naming ranks. */
+  maxOutRanks: 3,
+} as const;
+
 /** Opponent difficulty. All three share one character (decision #4); Phase 3 maps personalities. */
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
@@ -100,6 +114,8 @@ export const LAYOUT = {
   lamp: { x: 640, rodHeight: 64, rodWidth: 4, bulbRadius: 12, cone: { width: 500, height: 350 } },
 
   topBar: { x: 0, y: 0, width: 1280, height: 56, margin: 32 },
+  /** Home button in the top bar's right corner; the opponent's name moves left to make room. */
+  menuButton: { width: 48, height: 40, gap: 16, radius: 10 },
   pip: { radius: 10, gap: 8 },
 
   opponent: {
@@ -114,13 +130,27 @@ export const LAYOUT = {
   },
   bubble: { right: 1200, y: 80, maxWidth: 280 },
 
+  /** "BỘ BÀI": the player's best hand, its win rate and what could improve it. */
+  handPanel: {
+    x: 24,
+    y: 262,
+    width: 150,
+    pad: 10,
+    gap: 7,
+    rankBox: 50,
+    cell: { height: 26, gap: 4 },
+    meter: 4,
+    drawBox: 50,
+    font: { title: 11, badge: 10, rank: 14, small: 10, cell: 11, kicker: 9 },
+  },
+
   felt: { x: 190, y: 336.5, width: 900, height: 207, rim: 4, radius: 16 },
   board: { y: 399, step: 72, tilt: [-3, -1, 1, 2, 3] },
   betMeter: { y: 477.5, cell: 40, gap: 6, labelGap: 16 },
   streetLabelY: 514.5,
 
   bottomBar: { y: 580, height: 140 },
-  playerCards: { x: 87, y: 650, step: 78, tilt: 6 },
+  playerCards: { x: 87, y: 628, step: 78, tilt: 6 },
   playerToast: { x: 200, y: 548 },
   opponentToast: { x: 780, y: 234 },
   banner: { x: 320, y: 278, width: 640, height: 44 },
@@ -157,6 +187,8 @@ export const LAYOUT = {
 
   result: { width: 720, height: 480 },
 
+  confirm: { width: 560, height: 280, padding: 36, buttonWidth: 220, dim: 0.75 },
+
   rankings: { x: 48, top: 24, width: 1184, rowHeight: 62, rowGap: 8, colGap: 24, gridY: 104 },
   /** The 52-card tab: suit filter chips, then one row of thirteen cards per suit. */
   deck: { chipsY: 122, chipHeight: 30, rowsTop: 152, rowStep: 100, cardsX: 218, cardStep: 78 },
@@ -168,6 +200,8 @@ export const TIMING = {
   flip: 240,
   toast: 700,
   banner: 1100,
+  /** Extra time a banner stays readable after play moves on, before it fades away. */
+  bannerHold: 1500,
   meterPulse: 180,
   panelFade: 220,
   /** Pause before a lever shows its colour; Phase 4 turns this into the real suspense beat. */

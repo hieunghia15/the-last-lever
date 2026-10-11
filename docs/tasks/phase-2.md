@@ -30,6 +30,10 @@ flowchart LR
     T2 --> T13[T13 Lớp phủ xoay ngang]
     T12 & T13 --> T14[T14 Thử trên thiết bị]
     T14 --> T15[T15 Tổng kết]
+    T15 --> T16[T16 Thẻ BỘ BÀI]
+    T16 --> T17[T17 Lá người chơi hiện trọn]
+    T15 --> T18[T18 Nút về menu + popup]
+    T15 --> T19[T19 Banner tự ẩn]
 ```
 
 | # | Task | Tệp chính | Phụ thuộc |
@@ -49,6 +53,10 @@ flowchart LR
 | T13 | Lớp phủ "Hãy xoay ngang" | `index.html`, `src/style.css`, `src/main.ts` | T2 |
 | T14 | Thử trên máy tính và điện thoại | – | T12, T13 |
 | T15 | Tổng kết phase | `docs/plan.md`, skill, PR | T14 |
+| T16 | Thẻ "BỘ BÀI" | `src/ai/equity.ts`, `src/ui/handPanelModel.ts`, `src/ui/HandPanel.ts` | T15 |
+| T17 | Lá người chơi hiện trọn | `src/config.ts` | T16 |
+| T18 | Nút về menu và popup xác nhận | `src/scenes/ConfirmScene.ts`, `src/scenes/TableScene.ts`, `src/ui/ScoreBar.ts` | T15 |
+| T19 | Banner tự ẩn | `src/scenes/TableScene.ts` | T15 |
 
 ---
 
@@ -222,3 +230,41 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
 - [x] Chạy đủ `typecheck`, `lint`, `format:check`, `test`, và `npm run build` để chắc bản build không lỗi.
 - [x] Chạy GitNexus `detect_changes` trước khi commit (theo `CLAUDE.md`).
 - [x] Mở PR từ `feat/drafting-table` vào `main`.
+
+---
+
+## Bổ sung sau tổng kết
+
+Các task dưới làm thêm trên nhánh `feat/drafting-table` sau khi chơi thử. Nguồn thiết kế: `stitch/screen.png`, `stitch/code.html`, `stitch/DESIGN.md`.
+
+## T16 – Thẻ "BỘ BÀI"
+
+- [x] `src/ai/equity.ts`: `estimateEquity(hole, board, rng, trials = EQUITY.trials)` mô phỏng Monte Carlo với bài đối thủ ngẫu nhiên và các lá chung còn thiếu; hòa tính nửa. Không import Phaser hay i18n. Bot dùng lại ở Phase 3.
+- [x] `src/ui/handPanelModel.ts` (không import Phaser): `handPanelModel(hole, board)` trả hạng tay, vị trí trong `RANKINGS` (`01` mạnh nhất … `10`), dòng mô tả ("Đôi Át & Đôi K"), 5 lá tốt nhất (bộ trước, lá phụ sau; A đứng cuối trong sảnh A-2-3-4-5), equity và nhãn Mạnh / Khá / Yếu, gợi ý "Cơ hội". Trả `null` khi chưa chia bài.
+  - Equity dùng `Rng` có hạt giống lấy từ bộ lá, nên cùng tình huống luôn ra cùng con số.
+  - "Cơ hội": xét từng lá chưa lộ, lấy bộ mạnh nhất mà một lá nữa có thể tạo ra; ≤ `HAND_HINT.maxOutRanks` giá trị thì liệt kê ("A, K"), nhiều hơn thì đếm số lá. Trước flop: "Chờ 3 lá flop"; đủ 5 lá chung: "Đã đủ 5 lá chung".
+- [x] `src/ui/HandPanel.ts`: vẽ thẻ theo `stitch/` (đèn + "BỘ BÀI" + huy hiệu `xx/10`, ô hạng tay, lưới 5 ô lá, thanh Sức mạnh, hộp "✦ CƠ HỘI"). `setCards(hole, board)` có cache theo bộ lá; ẩn khi chưa có bài.
+- [x] `TableScene` cập nhật thẻ sau khi chia bài, sau từng lá chung lật ra và trong `render(view)`; dọn khi bắt đầu ván mới. Tạo thẻ trước HUD để bảng cần gạt phủ lên trên.
+- [x] Config: `EQUITY`, `HAND_HINT` (ngưỡng Mạnh/Khá), `LAYOUT.handPanel` (kể cả cỡ chữ). Chuỗi `handPanel.*` ở `vi.ts` và `en.ts`.
+- [x] Test: `tests/ai/equity.test.ts` (AA ≈ 85%, bài chung hòa = 0,5, cùng hạt giống cùng kết quả), `tests/ui/handPanelModel.test.ts` (đúng ví dụ trong thiết kế, chọn 5 lá từ 7, sảnh A-2-3-4-5, đếm lá thùng, đổi ngôn ngữ).
+
+**Lưu ý:** cỡ chữ của thẻ theo bản `stitch/` (9–14 px), nhỏ hơn mức tối thiểu 16 px trong `DESIGN.md`; cần xem lại khi thử trên điện thoại thật (T14).
+
+## T17 – Lá người chơi hiện trọn
+
+- [x] Lá lớn 110×150 nghiêng 6° cao khoảng 161 px; ở `y: 650` mép dưới tràn khỏi khung 720. Đổi `LAYOUT.playerCards.y` thành 628 (mép dưới ≈ 706).
+- [x] Nâng `LAYOUT.handPanel.y` từ 277 lên 262 để lá không đè lên đáy thẻ "BỘ BÀI".
+
+## T18 – Nút về menu và popup xác nhận
+
+- [x] Nút biểu tượng nhà (`ghost`, 48×40, vùng chạm cao bằng thanh trên) ở góc phải thanh tỉ số. `ScoreBar` có tùy chọn `rightInset` để dời tên bot và chấm tỉ số sang trái.
+- [x] `src/scenes/ConfirmScene.ts`: popup có/không dùng chung, chạy như scene phủ trên. Nền tối nuốt mọi chạm; Esc = hủy. Đóng chính nó trước rồi mới gọi callback.
+- [x] `TableScene.confirmQuit()`: `scene.pause()` rồi `scene.launch('ConfirmScene')`, nên bot, tween và đồng hồ đều dừng. "Ở LẠI" → `scene.resume()`; "VỀ MENU" → `scene.start('MenuScene')`, không ghi thống kê.
+- [x] Khóa nút khi trận đã kết thúc và đang chuyển sang `ResultScene`.
+- [x] Chuỗi `quit.title`, `quit.message`, `quit.stay`; config `LAYOUT.menuButton`, `LAYOUT.confirm`.
+- [x] Thử tay trên Edge: mở popup, chờ (bàn đứng yên), Ở lại rồi chơi tiếp, Về menu rồi vào trận mới, lặp 2 lần, có cả phím Esc.
+
+## T19 – Banner tự ẩn
+
+- [x] `showBanner` vẫn giữ nhịp chơi `TIMING.banner` như cũ, sau đó để banner nằm thêm `TIMING.bannerHold` (1,5 giây) rồi mờ dần mà không chặn hàng đợi.
+- [x] Banner mới hủy hẹn giờ và tween mờ của banner cũ. Vì các banner không bao giờ chồng nhau trong hàng đợi, tween bị hủy chỉ có thể là tween mờ, không phải tween đang được `await`.
