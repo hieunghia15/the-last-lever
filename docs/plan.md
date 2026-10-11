@@ -72,16 +72,16 @@ Nhánh: `feat/core-game-mechanics`. Task chi tiết: [docs/tasks/phase-1.md](tas
 
 Nhánh: `feat/drafting-table`. Task chi tiết: [docs/tasks/phase-2.md](tasks/phase-2.md).
 
-- [ ] `BootScene` tối giản → `TableScene` (Menu/Result tạm là nút bắt đầu và dòng kết quả)
-- [ ] Bố cục bằng hình khối theo tài liệu: tỉ số chấm tròn + số ván hòa, chỗ đối thủ + 2 lá úp, bàn hình thang, 5 ô lá chung, 6 ô mức cược, 2 lá của người chơi
-- [ ] `CardSprite` vẽ lá bằng hình + chữ (chưa cần atlas)
-- [ ] `ActionBar`: 5 nút, làm mờ nút không hợp lệ, Bỏ và Theo hiện số cần sẽ phải kéo; cao ≥ 64 px
-- [ ] `ScoreBar`
-- [ ] Hàng đợi sự kiện: `TableScene` phát lần lượt các sự kiện từ lõi bằng tween, khóa input khi đang diễn
-- [ ] `LeverPanel` bản thô: 6 hình chữ nhật, chạm để kéo, đổi màu xanh/đỏ (chưa có hiệu ứng)
-- [ ] Bot ngẫu nhiên trong các hành động hợp lệ, kéo cần ngẫu nhiên
-- [ ] Lớp phủ "Hãy xoay ngang"
-- [ ] Mọi chuỗi qua `t()`
+- [x] `BootScene` tối giản → `TableScene` (Menu/Result tạm là nút bắt đầu và dòng kết quả)
+- [x] Bố cục bằng hình khối theo tài liệu: tỉ số chấm tròn + số ván hòa, chỗ đối thủ + 2 lá úp, bàn hình thang, 5 ô lá chung, 6 ô mức cược, 2 lá của người chơi
+- [x] `CardSprite` vẽ lá bằng hình + chữ (chưa cần atlas)
+- [x] `ActionBar`: 5 nút, làm mờ nút không hợp lệ, Bỏ và Theo hiện số cần sẽ phải kéo; cao ≥ 64 px
+- [x] `ScoreBar`
+- [x] Hàng đợi sự kiện: `TableScene` phát lần lượt các sự kiện từ lõi bằng tween, khóa input khi đang diễn
+- [x] `LeverPanel` bản thô: 6 hình chữ nhật, chạm để kéo, đổi màu xanh/đỏ (chưa có hiệu ứng)
+- [x] Bot ngẫu nhiên trong các hành động hợp lệ, kéo cần ngẫu nhiên
+- [x] Lớp phủ "Hãy xoay ngang"
+- [x] Mọi chuỗi qua `t()`
 
 **Xong khi:** bấm nút chơi hết một trận trên máy tính và trên điện thoại qua `vite --host`.
 

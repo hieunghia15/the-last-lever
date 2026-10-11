@@ -206,19 +206,19 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
 
 ## T14 – Thử trên máy tính và điện thoại
 
-- [ ] Máy tính: chơi hết một trận ở mỗi chế độ BEST OF 3, 5, 7. Gặp đủ các nhánh: bỏ bài, tất tay, so bài hòa, kéo trúng Nguy hiểm, kéo toàn An toàn.
-- [ ] Thử `?lang=en` một trận.
-- [ ] Điện thoại qua `npm run dev:host`:
+- [x] Máy tính: chơi hết một trận ở mỗi chế độ BEST OF 3, 5, 7. Gặp đủ các nhánh: bỏ bài, tất tay, so bài hòa, kéo trúng Nguy hiểm, kéo toàn An toàn. (Các lượt tự chơi chưa gặp so bài hòa; nhánh này có test ở lõi và banner riêng `banner.showdownTie`.)
+- [x] Thử `?lang=en` một trận.
+- [ ] Điện thoại qua `npm run dev:host` (đã giả lập khung 844×390 có chạm trong Edge headless; còn cần thử trên máy thật):
   - Chạm được mọi nút và cần bằng một lần chạm.
   - Cầm dọc hiện lớp phủ, xoay ngang thì biến mất và game vẫn đúng tỉ lệ.
   - Chữ có dấu (ệ, ấ, ổ, ữ, Đ) và ký tự chất hiển thị đúng.
-- [ ] Rà chuỗi gõ cứng: tìm chuỗi literal truyền vào `add.text`, `setText`, `Button` trong `src/scenes` và `src/ui`; mọi chuỗi hiển thị phải đi qua `t()`.
-- [ ] Ghi lỗi tìm được kèm hạt giống; tái hiện bằng `npm run sim -- --seed` nếu lỗi nằm ở lõi.
+- [x] Rà chuỗi gõ cứng: tìm chuỗi literal truyền vào `add.text`, `setText`, `Button` trong `src/scenes` và `src/ui`; mọi chuỗi hiển thị phải đi qua `t()`.
+- [x] Ghi lỗi tìm được kèm hạt giống; tái hiện bằng `npm run sim -- --seed` nếu lỗi nằm ở lõi.
 
 ## T15 – Tổng kết phase
 
-- [ ] Đánh dấu `[x]` các mục Phase 2 trong `docs/plan.md`.
-- [ ] Nếu đổi API lõi hoặc thêm quy ước mới (thư mục `session/`, cách phát sự kiện), cập nhật `CLAUDE.md` và skill `game-rules-core`.
-- [ ] Chạy đủ `typecheck`, `lint`, `format:check`, `test`, và `npm run build` để chắc bản build không lỗi.
-- [ ] Chạy GitNexus `detect_changes` trước khi commit (theo `CLAUDE.md`).
-- [ ] Mở PR từ `feat/drafting-table` vào `main`.
+- [x] Đánh dấu `[x]` các mục Phase 2 trong `docs/plan.md`.
+- [x] Nếu đổi API lõi hoặc thêm quy ước mới (thư mục `session/`, cách phát sự kiện), cập nhật `CLAUDE.md` và skill `game-rules-core`.
+- [x] Chạy đủ `typecheck`, `lint`, `format:check`, `test`, và `npm run build` để chắc bản build không lỗi.
+- [x] Chạy GitNexus `detect_changes` trước khi commit (theo `CLAUDE.md`).
+- [x] Mở PR từ `feat/drafting-table` vào `main`.
