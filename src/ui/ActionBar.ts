@@ -9,8 +9,12 @@ const VARIANT: Record<BetMove, ButtonVariant> = {
   raise: 'secondary',
   call: 'primary',
   fold: 'danger',
-  allIn: 'danger',
+  allIn: 'allIn',
 };
+
+const FONT_SIZE = 18;
+/** Call is the expected move, so it is set larger and bold like the design. */
+const CALL_FONT_SIZE = 20;
 
 /** The five bet buttons. Locks itself on tap so a double tap can never send two moves. */
 export class ActionBar extends Phaser.GameObjects.Container {
@@ -30,7 +34,13 @@ export class ActionBar extends Phaser.GameObjects.Container {
         scene,
         i * (width + bar.gap) + width / 2,
         bar.height / 2,
-        { width, label: '', variant: VARIANT[move] },
+        {
+          width,
+          height: bar.height,
+          label: '',
+          variant: VARIANT[move],
+          fontSize: move === 'call' ? CALL_FONT_SIZE : FONT_SIZE,
+        },
         () => this.tap(move),
       );
       this.add(button);

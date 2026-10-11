@@ -103,7 +103,7 @@ Nhánh: `feat/drafting-table`. Task chi tiết: [docs/tasks/phase-2.md](tasks/ph
 ## Phase 4 – Khoảnh khắc kéo cần
 
 - [ ] Bảng 6 cần trượt ra giữa màn hình khi vào `challenge`, nền phía sau tối đi
-- [ ] Bộ đếm "đã kéo x / n"
+- [x] Bộ đếm "đã kéo x / n"
 - [ ] Hoạt ảnh kéo cần, ngừng ~1 giây (cấu hình được) rồi mới lộ kết quả
 - [ ] Safe: đèn xanh; Nguy hiểm: đèn đỏ + tia điện (particles/graphics)
 - [ ] Người chơi trúng Nguy hiểm: lóe trắng, rung camera, tia điện tỏa ra mép màn hình
@@ -119,12 +119,12 @@ Nhánh: `feat/drafting-table`. Task chi tiết: [docs/tasks/phase-2.md](tasks/ph
 - [ ] Nền quán rượu tối, bàn phối cảnh, đèn treo
 - [ ] Bảng cần gạt và cần ở 3 trạng thái (chưa kéo, Safe, Nguy hiểm)
 - [ ] Atlas bài 52 lá + mặt sau từ Kenney (CC0), ghi `CREDITS.md`
-- [ ] Nút, ô mức cược, chấm tỉ số vẽ thật
-- [ ] `BootScene` có thanh tiến độ tải
-- [ ] `MenuScene`: BEST OF 3/5/7, Dễ/Vừa/Khó/Ngẫu nhiên, Cách chơi, đổi ngôn ngữ; nút âm thanh ẩn cho tới khi có âm thanh
-- [ ] Màn Cách chơi: 3–4 trang tĩnh có hình
-- [ ] `ResultScene`: thắng/thua, tỉ số, số ván hòa, chơi lại, về menu
-- [ ] localStorage: ngôn ngữ, thống kê thắng/thua theo mức khó (bọc try/catch)
+- [x] Nút, ô mức cược, chấm tỉ số vẽ thật
+- [x] `BootScene` có thanh tiến độ tải
+- [x] `MenuScene`: BEST OF 3/5/7, Dễ/Vừa/Khó/Ngẫu nhiên, Cách chơi, đổi ngôn ngữ; nút âm thanh ẩn cho tới khi có âm thanh
+- [x] Màn Cách chơi: 3–4 trang tĩnh có hình
+- [x] `ResultScene`: thắng/thua, tỉ số, số ván hòa, chơi lại, về menu
+- [x] localStorage: ngôn ngữ, thống kê thắng/thua theo mức khó (bọc try/catch)
 - [ ] Xin toàn màn hình ở lần chạm đầu (bỏ qua trên iOS Safari)
 - [ ] Thử trên một điện thoại thật: chạm, xoay màn hình, tỉ lệ, chữ có dấu
 - [ ] Tối ưu dung lượng: nén PNG, atlas, kiểm tra kích thước build

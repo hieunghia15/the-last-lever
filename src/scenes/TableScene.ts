@@ -1,25 +1,27 @@
 import Phaser from 'phaser';
-import { BETTING, COLORS, DISPLAY, LAYOUT, TIMING, type MatchMode } from '../config';
+import { BETTING, COLORS, DISPLAY, LAYOUT, OPPONENTS, TIMING, type Difficulty } from '../config';
 import { STREETS, type BetMove } from '../core/betting';
 import type { Card } from '../core/cards';
 import type { GameEvent, PlayerView, Seat } from '../core/gameState';
 import { t } from '../i18n';
 import { EventQueue } from '../session/eventQueue';
 import { BOT, HUMAN, MatchSession } from '../session/matchSession';
+import { browserStore, recordMatch } from '../session/profile';
 import { ActionBar } from '../ui/ActionBar';
 import { actionBarModel } from '../ui/actionBarModel';
 import { tweenAsync, wait } from '../ui/anim';
 import { BetMeter } from '../ui/BetMeter';
 import { Button } from '../ui/Button';
-import { CardSprite, drawCardSlot } from '../ui/CardSprite';
+import { addCardSlot, CardSprite } from '../ui/CardSprite';
+import { addBackdrop, addGlow, addLamp, drawGlowRect, drawPanel } from '../ui/decor';
 import { LeverPanel } from '../ui/LeverPanel';
 import { ScoreBar } from '../ui/ScoreBar';
+import { SpeechBubble } from '../ui/SpeechBubble';
 import { textStyle } from '../ui/text';
+import { feltTexture } from '../ui/textures';
+import { bestOf, type ResultSceneData, type TableSceneData } from './flow';
 
-export interface TableSceneData {
-  mode: MatchMode;
-  seed: number;
-}
+export type { TableSceneData } from './flow';
 
 const BOARD_SIZE = 5;
 
@@ -30,12 +32,13 @@ const BOARD_SIZE = 5;
 export class TableScene extends Phaser.Scene {
   private session!: MatchSession;
   private queue!: EventQueue<GameEvent>;
+  private setup!: TableSceneData;
   private names!: [string, string];
 
   private scoreBar!: ScoreBar;
   private betMeter!: BetMeter;
   private streetLabel!: Phaser.GameObjects.Text;
-  private thinking!: Phaser.GameObjects.Text;
+  private bubble!: SpeechBubble;
   private toasts!: [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
   private banner!: Phaser.GameObjects.Container;
   private bannerText!: Phaser.GameObjects.Text;
@@ -52,8 +55,9 @@ export class TableScene extends Phaser.Scene {
   }
 
   init(data: TableSceneData): void {
+    this.setup = data;
     this.session = new MatchSession({ mode: data.mode, seed: data.seed });
-    this.names = [t('seat.you'), t('seat.bot')];
+    this.names = [t('seat.you'), OPPONENTS[data.difficulty].name];
     this.botCards = [];
     this.boardCards = [];
     this.playerCards = [];
@@ -61,10 +65,12 @@ export class TableScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.drawRoom();
+    addBackdrop(this, 'table');
     this.drawTable();
-    this.drawOpponent();
-    this.drawPlayerCards();
+    this.drawOpponent(this.setup.difficulty);
+    // The lamp hangs in front of the opponent, as in the design.
+    addLamp(this);
+    this.drawBottomBar();
     this.drawHud();
 
     this.queue = new EventQueue((event) => this.play(event));
@@ -72,6 +78,7 @@ export class TableScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.queue.dispose());
 
     this.render(this.session.view);
+    this.cameras.main.fadeIn(TIMING.panelFade);
     this.submit(() => this.session.deal());
   }
 
@@ -102,9 +109,9 @@ export class TableScene extends Phaser.Scene {
         else this.leverPanel.setAccepting(true);
         break;
       case 'bot':
-        this.thinking.setVisible(view.phase === 'betting');
+        if (view.phase === 'betting') this.bubble.say(t('bot.thinking'));
         this.time.delayedCall(TIMING.botThink, () => {
-          this.thinking.setVisible(false);
+          this.bubble.hide();
           this.submit(() => this.session.botAct());
         });
         break;
@@ -113,7 +120,7 @@ export class TableScene extends Phaser.Scene {
         this.nextButton.setVisible(true).setEnabled(true);
         break;
       case 'over':
-        this.showResult(view);
+        this.finish(view);
         break;
     }
   }
@@ -138,6 +145,30 @@ export class TableScene extends Phaser.Scene {
     this.submit(() => this.session.deal());
   }
 
+  /** Saves the result to the per-difficulty record, then hands over to the result screen. */
+  private finish(view: PlayerView): void {
+    const won = view.wins[HUMAN] > view.wins[BOT];
+    const { difficulty, mode, choice } = this.setup;
+    const stats = recordMatch(browserStore(), difficulty, won);
+    const data: ResultSceneData = {
+      won,
+      wins: [view.wins[HUMAN], view.wins[BOT]],
+      draws: view.draws,
+      mode,
+      difficulty,
+      choice,
+      names: this.names,
+      record: stats[difficulty],
+    };
+    this.actionBar.setVisible(false);
+    this.time.delayedCall(TIMING.banner / 2, () => {
+      this.cameras.main.fadeOut(TIMING.panelFade);
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () =>
+        this.scene.start('ResultScene', data),
+      );
+    });
+  }
+
   // ── Event playback ─────────────────────────────────────────────────────────
 
   private async play(event: GameEvent): Promise<void> {
@@ -156,7 +187,7 @@ export class TableScene extends Phaser.Scene {
         if (event.move !== 'fold') await this.toast(event.seat, toastText(event.move, event.level));
         break;
       case 'streetRevealed':
-        this.streetLabel.setText(t(`street.${event.street}`));
+        this.setStreet(event.street);
         for (const card of event.cards) await this.revealBoardCard(card);
         break;
       case 'showdown':
@@ -203,7 +234,11 @@ export class TableScene extends Phaser.Scene {
     this.revealed = 0;
     [...this.boardCards, ...this.botCards, ...this.playerCards].forEach((c) => c.setVisible(false));
     this.betMeter.setLevel(BETTING.startLevel);
-    this.streetLabel.setText(t('street.preflop'));
+    this.setStreet('preflop');
+  }
+
+  private setStreet(street: (typeof STREETS)[number]): void {
+    this.streetLabel.setText(t('table.street', { street: t(`street.${street}`) }).toUpperCase());
   }
 
   private async dealHoles(mine: readonly Card[]): Promise<void> {
@@ -212,7 +247,7 @@ export class TableScene extends Phaser.Scene {
       sprite
         .setVisible(true)
         .setAlpha(0)
-        .setPosition(DISPLAY.width / 2, LAYOUT.table.topY);
+        .setPosition(DISPLAY.width / 2, LAYOUT.felt.y);
       return tweenAsync(this, { targets: sprite, x, y, alpha: 1, delay, duration: TIMING.deal });
     };
     this.playerCards.forEach((sprite, i) => {
@@ -254,63 +289,6 @@ export class TableScene extends Phaser.Scene {
     await wait(this, TIMING.banner);
   }
 
-  private showResult(view: PlayerView): void {
-    const won = view.wins[HUMAN] > view.wins[BOT];
-    const r = LAYOUT.result;
-    const cx = DISPLAY.width / 2;
-    const cy = DISPLAY.height / 2;
-    this.actionBar.setVisible(false);
-
-    const dim = this.add
-      .rectangle(0, 0, DISPLAY.width, DISPLAY.height, 0x000000, LAYOUT.leverPanel.dim)
-      .setOrigin(0)
-      .setInteractive();
-    const panel = this.add.graphics();
-    panel.fillStyle(COLORS.woodDark, 0.95);
-    panel.fillRoundedRect(cx - r.width / 2, cy - r.height / 2, r.width, r.height, 16);
-    panel.lineStyle(2, won ? COLORS.amber : COLORS.danger, 1);
-    panel.strokeRoundedRect(cx - r.width / 2, cy - r.height / 2, r.width, r.height, 16);
-    const { fontSize } = LAYOUT;
-    const headline = this.add
-      .text(cx, cy - 110, t(won ? 'match.won' : 'match.lost'), {
-        ...textStyle(fontSize.title, won ? COLORS.amber : COLORS.danger, true),
-      })
-      .setOrigin(0.5);
-    const score = this.add
-      .text(
-        cx,
-        cy - 30,
-        t('match.score', {
-          you: this.names[HUMAN],
-          a: view.wins[HUMAN],
-          b: view.wins[BOT],
-          bot: this.names[BOT],
-        }),
-        textStyle(fontSize.heading, COLORS.cream, true),
-      )
-      .setOrigin(0.5);
-    const draws = this.add
-      .text(
-        cx,
-        cy + 20,
-        t('match.draws', { n: view.draws }),
-        textStyle(fontSize.body, COLORS.muted),
-      )
-      .setOrigin(0.5);
-    const again = new Button(
-      this,
-      cx,
-      cy + 100,
-      { width: 320, label: t('match.again'), variant: 'primary' },
-      () => this.scene.start('BootScene'),
-    );
-    const overlay = this.add
-      .container(0, 0, [dim, panel, headline, score, draws, again])
-      .setDepth(200)
-      .setAlpha(0);
-    this.tweens.add({ targets: overlay, alpha: 1, duration: TIMING.panelFade });
-  }
-
   // ── Rendering from state ───────────────────────────────────────────────────
 
   /** Redraws the table from the human's view, so pictures never drift from the state. */
@@ -318,7 +296,7 @@ export class TableScene extends Phaser.Scene {
     this.scoreBar.setScore(view.wins, view.draws);
     this.betMeter.setLevel(view.betting?.level ?? 0);
     // From the board, not betting.street: an all-in runout deals the river without new streets.
-    if (view.round > 0) this.streetLabel.setText(t(`street.${streetOf(view.board.length)}`));
+    if (view.round > 0) this.setStreet(streetOf(view.board.length));
     this.actionBar.setModel(actionBarModel(view));
     if (view.challenge) this.leverPanel.sync(view.challenge.levers);
 
@@ -344,112 +322,134 @@ export class TableScene extends Phaser.Scene {
 
   // ── Static layout ──────────────────────────────────────────────────────────
 
-  private drawRoom(): void {
-    this.cameras.main.setBackgroundColor(COLORS.night);
-    // A warm pool of lamp light over the table; the real tavern art arrives in Phase 5.
-    const glow = this.add.graphics();
-    for (let i = 6; i >= 1; i--) {
-      glow.fillStyle(COLORS.amber, 0.025);
-      glow.fillEllipse(DISPLAY.width / 2, 300, 220 * i, 110 * i);
-    }
-  }
-
-  private drawOpponent(): void {
+  /** Portrait placeholder, name plate with difficulty, and the two face-down cards. */
+  private drawOpponent(difficulty: Difficulty): void {
     const o = LAYOUT.opponent;
+    const { name, accent } = OPPONENTS[difficulty];
+    addGlow(this, o.x, o.avatarY, o.avatarRadius * 3, accent, 0.35);
     const g = this.add.graphics();
-    g.fillStyle(COLORS.woodMid, 1);
-    g.fillRoundedRect(o.x - o.body.width / 2, o.body.y, o.body.width, o.body.height, 24);
-    g.fillStyle(COLORS.muted, 1);
-    g.fillCircle(o.x, o.headY, o.headRadius);
-
-    const name = this.add
-      .text(
-        o.x,
-        o.nameY,
-        this.names[BOT].toUpperCase(),
-        textStyle(LAYOUT.fontSize.body, COLORS.cream, true),
-      )
+    g.fillStyle(COLORS.woodDark, 1).fillCircle(o.x, o.avatarY, o.avatarRadius);
+    g.lineStyle(2, accent, 1).strokeCircle(o.x, o.avatarY, o.avatarRadius - 1);
+    this.add
+      .text(o.x, o.avatarY, name.charAt(0), textStyle(LAYOUT.fontSize.heading, COLORS.amberLight))
       .setOrigin(0.5);
-    this.thinking = this.add
-      .text(
-        name.x + name.width / 2 + 12,
-        o.nameY,
-        t('bot.thinking'),
-        textStyle(LAYOUT.fontSize.caption, COLORS.amber),
-      )
-      .setOrigin(0, 0.5)
-      .setVisible(false);
 
-    const { width } = LAYOUT.card.small;
-    for (const dx of [-1, 1]) {
-      const card = new CardSprite(this, o.x + dx * (width / 2 + o.cardGap / 2), o.cardsY, 'small');
+    const plate = this.add.graphics();
+    const nameText = this.add
+      .text(0, o.plateY, name, textStyle(14, COLORS.creamSoft))
+      .setOrigin(0, 0.5);
+    const level = this.add
+      .text(
+        0,
+        o.plateY,
+        t(`difficulty.${difficulty}`),
+        textStyle(LAYOUT.fontSize.caption, COLORS.muted),
+      )
+      .setOrigin(0, 0.5);
+    const width = 17 + nameText.width + 8 + 6 + 8 + level.width + 17;
+    let x = o.x - width / 2;
+    drawPanel(
+      plate,
+      { x, y: o.plateY - o.plateHeight / 2, width, height: o.plateHeight },
+      {
+        fill: COLORS.plate,
+        fillAlpha: 0.9,
+        stroke: COLORS.rivet,
+        strokeAlpha: 0.3,
+        strokeWidth: 1,
+        radius: o.plateHeight / 2,
+      },
+    );
+    x += 17;
+    nameText.setX(x);
+    x += nameText.width + 8;
+    plate.fillStyle(COLORS.safe, 1).fillCircle(x + 3, o.plateY, 3);
+    level.setX(x + 6 + 8);
+
+    const step = o.card.width + o.cardGap;
+    for (const dx of [-0.5, 0.5]) {
+      const card = new CardSprite(this, o.x + dx * step, o.cardsY, 'small');
       this.botCards.push(card.setVisible(false));
     }
+    this.bubble = new SpeechBubble(this);
   }
 
   private drawTable(): void {
-    const tb = LAYOUT.table;
-    const g = this.add.graphics();
-    const corners = [
-      new Phaser.Math.Vector2(tb.topLeft, tb.topY),
-      new Phaser.Math.Vector2(tb.topRight, tb.topY),
-      new Phaser.Math.Vector2(tb.bottomRight, tb.bottomY),
-      new Phaser.Math.Vector2(tb.bottomLeft, tb.bottomY),
-    ];
-    g.fillStyle(COLORS.felt, 1);
-    g.fillPoints(corners, true);
-    g.lineStyle(10, COLORS.woodMid, 1);
-    g.strokePoints(corners, true);
+    const f = LAYOUT.felt;
+    const rect = { x: f.x, y: f.y, width: f.width, height: f.height };
+    const shadow = this.add.graphics();
+    drawGlowRect(shadow, { ...rect, y: rect.y + 10 }, 0x000000, 0.25, 15, f.radius);
+    this.add.image(f.x, f.y, feltTexture(this)).setOrigin(0);
+    const rim = this.add.graphics();
+    drawPanel(rim, rect, { stroke: COLORS.woodDark, strokeWidth: f.rim, radius: f.radius });
 
-    const { width } = LAYOUT.card.medium;
-    const { y, gap } = LAYOUT.board;
-    const left = DISPLAY.width / 2 - (BOARD_SIZE * width + (BOARD_SIZE - 1) * gap) / 2 + width / 2;
+    const { y, step, tilt } = LAYOUT.board;
+    const left = DISPLAY.width / 2 - ((BOARD_SIZE - 1) * step) / 2;
     for (let i = 0; i < BOARD_SIZE; i++) {
-      const x = left + i * (width + gap);
-      drawCardSlot(g, x, y, 'medium');
-      this.boardCards.push(new CardSprite(this, x, y, 'medium').setVisible(false));
+      const x = left + i * step;
+      const angle = tilt[i] ?? 0;
+      addCardSlot(this, x, y, 'medium', angle);
+      this.boardCards.push(new CardSprite(this, x, y, 'medium').setAngle(angle).setVisible(false));
     }
 
+    this.betMeter = new BetMeter(this, DISPLAY.width / 2, LAYOUT.betMeter.y);
     this.streetLabel = this.add
       .text(
         DISPLAY.width / 2,
         LAYOUT.streetLabelY,
         '',
-        textStyle(LAYOUT.fontSize.caption, COLORS.muted),
+        textStyle(LAYOUT.fontSize.caption, COLORS.shock, false, {
+          font: 'mono',
+          letterSpacing: 1.2,
+        }),
       )
       .setOrigin(0.5);
-    this.betMeter = new BetMeter(this, DISPLAY.width / 2 + 50, LAYOUT.betMeter.y);
   }
 
-  private drawPlayerCards(): void {
-    const { x, y, overlap } = LAYOUT.playerCards;
-    const { width, height } = LAYOUT.card.large;
-    [-4, 4].forEach((angle, i) => {
-      const card = new CardSprite(
-        this,
-        x + width / 2 + i * (width - overlap),
-        y + height / 2,
-        'large',
-      );
+  /** The dark strip at the bottom holding the player's hole cards and the action bar. */
+  private drawBottomBar(): void {
+    const b = LAYOUT.bottomBar;
+    this.add.rectangle(0, b.y, DISPLAY.width, b.height, COLORS.bottomBar).setOrigin(0);
+    this.add.rectangle(0, b.y, DISPLAY.width, 1, COLORS.rivet, 0.2).setOrigin(0);
+
+    const { x, y, step, tilt } = LAYOUT.playerCards;
+    [-tilt, tilt].forEach((angle, i) => {
+      const card = new CardSprite(this, x + i * step, y, 'large');
       this.playerCards.push(card.setAngle(angle).setVisible(false));
     });
   }
 
   private drawHud(): void {
-    this.scoreBar = new ScoreBar(this, this.session.view.winsNeeded, this.names);
+    this.scoreBar = new ScoreBar(this, {
+      winsNeeded: this.session.view.winsNeeded,
+      bestOf: bestOf(this.setup.mode),
+      names: this.names,
+    });
 
-    const toastStyle = textStyle(LAYOUT.fontSize.heading, COLORS.amber, true);
-    const toast = () => this.add.text(0, 0, '', toastStyle).setOrigin(0.5).setVisible(false);
+    const toastStyle = textStyle(LAYOUT.fontSize.button, COLORS.amber, true);
+    const toast = () =>
+      this.add
+        .text(0, 0, '', toastStyle)
+        .setOrigin(0.5)
+        .setShadow(0, 2, 'rgba(0, 0, 0, 0.8)', 6, false, true)
+        .setVisible(false);
     this.toasts = [toast(), toast()];
 
     const b = LAYOUT.banner;
     const bg = this.add.graphics();
-    bg.fillStyle(COLORS.woodDark, 0.92);
-    bg.fillRoundedRect(0, 0, b.width, b.height, LAYOUT.radius);
-    bg.lineStyle(2, COLORS.amber, 1);
-    bg.strokeRoundedRect(0, 0, b.width, b.height, LAYOUT.radius);
+    drawPanel(
+      bg,
+      { x: 0, y: 0, width: b.width, height: b.height },
+      {
+        fill: COLORS.slate,
+        fillAlpha: 0.95,
+        stroke: COLORS.amber,
+        strokeAlpha: 0.6,
+        strokeWidth: 2,
+      },
+    );
     this.bannerText = this.add
-      .text(b.width / 2, b.height / 2, '', textStyle(LAYOUT.fontSize.body, COLORS.cream, true))
+      .text(b.width / 2, b.height / 2, '', textStyle(LAYOUT.fontSize.label, COLORS.cream, true))
       .setOrigin(0.5);
     this.banner = this.add.container(b.x, b.y, [bg, this.bannerText]).setVisible(false);
 
@@ -459,7 +459,7 @@ export class TableScene extends Phaser.Scene {
       this,
       bar.x + bar.width / 2,
       bar.y + bar.height / 2,
-      { width: 360, label: t('round.next'), variant: 'primary' },
+      { width: 360, label: t('round.next'), variant: 'primary', fontSize: 20 },
       () => this.onNextRound(),
     ).setVisible(false);
 

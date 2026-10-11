@@ -3,9 +3,15 @@ import '@fontsource/saira-stencil/700.css';
 import './style.css';
 import Phaser from 'phaser';
 import { DISPLAY } from './config';
-import { isLocale, setLocale, t } from './i18n';
+import { isLocale } from './i18n';
+import { applyLocale } from './locale';
 import { BootScene } from './scenes/BootScene';
+import { HowToScene } from './scenes/HowToScene';
+import { MenuScene } from './scenes/MenuScene';
+import { RankingsScene } from './scenes/RankingsScene';
+import { ResultScene } from './scenes/ResultScene';
 import { TableScene } from './scenes/TableScene';
+import { browserStore, loadLocale } from './session/profile';
 
 // Phaser rasterises text once, so the web font must be ready before the first scene draws.
 async function loadFonts(): Promise<void> {
@@ -19,16 +25,10 @@ async function loadFonts(): Promise<void> {
   }
 }
 
-// ?lang=en lets us try the English UI before the Phase 5 menu has a language switch.
-const lang = new URLSearchParams(location.search).get('lang');
-if (isLocale(lang)) {
-  setLocale(lang);
-  document.documentElement.lang = lang;
-}
-
-// The rotate overlay is plain DOM so it works even before Phaser boots.
-const rotateMessage = document.getElementById('rotate-message');
-if (rotateMessage) rotateMessage.textContent = t('rotate.message');
+// ?lang=en wins for a quick check; otherwise the language picked in the menu last time.
+const fromUrl = new URLSearchParams(location.search).get('lang');
+const saved = loadLocale(browserStore());
+applyLocale(isLocale(fromUrl) ? fromUrl : isLocale(saved) ? saved : 'vi');
 
 await loadFonts();
 
@@ -42,5 +42,5 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, TableScene],
+  scene: [BootScene, MenuScene, HowToScene, RankingsScene, TableScene, ResultScene],
 });

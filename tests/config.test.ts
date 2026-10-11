@@ -38,12 +38,17 @@ describe('config', () => {
         topBar: LAYOUT.topBar,
         banner: LAYOUT.banner,
         actionBar: LAYOUT.actionBar,
+        felt: LAYOUT.felt,
         leverPanel,
+        menuPanel: LAYOUT.menu.panel,
+        howTo: LAYOUT.howTo,
+        // Hole cards may dip below the bottom edge (they are cropped in the design), but
+        // their faces must start on screen.
         playerCards: {
-          x: playerCards.x,
-          y: playerCards.y,
-          width: card.large.width * 2 - playerCards.overlap,
-          height: card.large.height,
+          x: playerCards.x - card.large.width / 2,
+          y: playerCards.y - card.large.height / 2,
+          width: playerCards.step + card.large.width,
+          height: DISPLAY.height - (playerCards.y - card.large.height / 2),
         },
       };
       for (const [name, zone] of Object.entries(zones)) expect(inFrame(zone), name).toBe(true);
@@ -60,12 +65,18 @@ describe('config', () => {
     });
 
     it('fits six levers in the panel and six stake cells on the table', () => {
-      const { leverPanel, betMeter, table } = LAYOUT;
+      const { leverPanel, betMeter, felt } = LAYOUT;
       const levers =
         LEVERS.count * leverPanel.lever.width + (LEVERS.count - 1) * leverPanel.lever.gap;
       expect(levers).toBeLessThanOrEqual(leverPanel.width);
       const cells = BETTING.maxLevel * betMeter.cell + (BETTING.maxLevel - 1) * betMeter.gap;
-      expect(cells).toBeLessThanOrEqual(table.topRight - table.topLeft);
+      expect(cells).toBeLessThanOrEqual(felt.width);
+    });
+
+    it('keeps the action bar clear of the player cards', () => {
+      const { playerCards, card, actionBar } = LAYOUT;
+      const cardsRight = playerCards.x + playerCards.step + card.large.width / 2;
+      expect(cardsRight).toBeLessThanOrEqual(actionBar.x);
     });
   });
 });

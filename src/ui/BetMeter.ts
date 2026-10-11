@@ -1,33 +1,54 @@
 import Phaser from 'phaser';
-import { BETTING, COLORS, LAYOUT, TIMING } from '../config';
+import { BETTING, COLORS, cssColor, LAYOUT, TIMING } from '../config';
 import { t } from '../i18n';
+import { drawGlowRect } from './decor';
 import { textStyle } from './text';
 
-/** "Mức cược" label plus one cell per stake level; cells up to the current level glow. */
+interface Cell {
+  box: Phaser.GameObjects.Rectangle;
+  glow: Phaser.GameObjects.Graphics;
+  number: Phaser.GameObjects.Text;
+}
+
+/** "Mức cược" label plus one cell per stake level; the row is centred on x. */
 export class BetMeter extends Phaser.GameObjects.Container {
-  private readonly cells: Phaser.GameObjects.Rectangle[] = [];
+  private readonly cells: Cell[] = [];
   private level = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y);
     const { cell, gap, labelGap } = LAYOUT.betMeter;
-    const total = BETTING.maxLevel * cell + (BETTING.maxLevel - 1) * gap;
-    const left = -total / 2;
-
     const label = scene.add
-      .text(left - labelGap, 0, t('table.stake'), textStyle(LAYOUT.fontSize.body, COLORS.cream))
-      .setOrigin(1, 0.5);
+      .text(
+        0,
+        0,
+        t('table.stake').toUpperCase(),
+        textStyle(LAYOUT.fontSize.label, COLORS.cream, false, { letterSpacing: 0.8 }),
+      )
+      .setOrigin(0, 0.5);
+    const cellsWidth = BETTING.maxLevel * cell + (BETTING.maxLevel - 1) * gap;
+    const left = -(label.width + labelGap + cellsWidth) / 2;
+    label.setX(left);
     this.add(label);
 
+    const first = left + label.width + labelGap;
     for (let i = 0; i < BETTING.maxLevel; i++) {
-      const rect = scene.add
-        .rectangle(left + i * (cell + gap) + cell / 2, 0, cell, cell, COLORS.woodDark)
-        .setStrokeStyle(2, COLORS.woodMid);
+      const cx = first + i * (cell + gap) + cell / 2;
+      const glow = scene.add.graphics();
+      drawGlowRect(
+        glow,
+        { x: cx - cell / 2, y: -cell / 2, width: cell, height: cell },
+        COLORS.amber,
+        0.5,
+        6,
+        2,
+      );
+      const box = scene.add.rectangle(cx, 0, cell, cell, COLORS.slate);
       const number = scene.add
-        .text(rect.x, 0, String(i + 1), textStyle(LAYOUT.fontSize.caption, COLORS.muted, true))
+        .text(cx, 0, String(i + 1), textStyle(14, COLORS.muted))
         .setOrigin(0.5);
-      this.cells.push(rect);
-      this.add([rect, number]);
+      this.cells.push({ box, glow, number });
+      this.add([glow, box, number]);
     }
     scene.add.existing(this);
   }
@@ -35,13 +56,18 @@ export class BetMeter extends Phaser.GameObjects.Container {
   setLevel(level: number, animate = false): void {
     const previous = this.level;
     this.level = level;
-    this.cells.forEach((rect, i) => {
+    this.cells.forEach(({ box, glow, number }, i) => {
       const lit = i < level;
-      rect.setFillStyle(lit ? COLORS.amber : COLORS.woodDark);
-      rect.setStrokeStyle(2, lit ? COLORS.cream : COLORS.woodMid);
+      box.setFillStyle(lit ? COLORS.amber : COLORS.slate);
+      if (lit) box.setStrokeStyle();
+      else box.setStrokeStyle(1, COLORS.rivet, 0.4);
+      glow.setVisible(lit);
+      number
+        .setColor(cssColor(lit ? COLORS.amberInkDeep : COLORS.muted))
+        .setFontStyle(lit ? '700' : '400');
       if (animate && lit && i >= previous) {
         this.scene.tweens.add({
-          targets: rect,
+          targets: box,
           scale: { from: 1.35, to: 1 },
           duration: TIMING.meterPulse,
           ease: 'Back.easeOut',
