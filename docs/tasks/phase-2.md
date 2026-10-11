@@ -144,14 +144,14 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
 
 ## T9 – Thanh hành động (`ActionBar`)
 
-- [ ] `src/ui/actionBarModel.ts` (không import Phaser): `actionBarModel(view)` trả 5 mục theo thứ tự `BET_MOVES`, mỗi mục gồm `move`, `enabled` (có trong `view.legal`), khóa nhãn, phụ đề đã điền số:
+- [x] `src/ui/actionBarModel.ts` (không import Phaser): `actionBarModel(view)` trả 5 mục theo thứ tự `BET_MOVES`, mỗi mục gồm `move`, `enabled` (có trong `view.legal`), khóa nhãn, phụ đề đã điền số:
   - Tăng: "lên {level + raiseStep}".
   - Theo: "thua: kéo {level} cần".
   - Bỏ: "kéo {foldPulls(betting, me)} cần".
   - Tất tay: "lên {maxLevel}".
   - Xem bài: không phụ đề.
-- [ ] `ActionBar`: 5 `Button` chia đều vùng `LAYOUT`, cao ≥ 64 px. `setModel(model)`, `setLocked(bool)`, gọi `onMove(move)` khi bấm. Bấm xong tự khóa ngay để không gửi hai lần.
-- [ ] Test `actionBarModel`:
+- [x] `ActionBar`: 5 `Button` chia đều vùng `LAYOUT`, cao ≥ 64 px. `setModel(model)`, `setLocked(bool)`, gọi `onMove(move)` khi bấm. Bấm xong tự khóa ngay để không gửi hai lần.
+- [x] Test `actionBarModel`:
   - Lượt đầu vòng: Xem bài, Tăng, Bỏ, Tất tay bật; Theo tắt.
   - Bị tăng từ 2 lên 3: Theo hiện "kéo 3", Bỏ hiện "kéo 2".
   - Mức đã là 6: Tăng và Tất tay tắt.
