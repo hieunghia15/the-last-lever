@@ -54,20 +54,20 @@ flowchart LR
 
 ## T1 – Chuẩn bị
 
-- [ ] Thêm vào `src/config.ts`:
+- [x] Thêm vào `src/config.ts`:
   - `COLORS`: bảng màu theo design system trong `docs/stitch-ui-brief.md` (nền đêm, gỗ, nỉ bàn, hổ phách, chữ kem, chữ mờ, Safe xanh, Nguy hiểm đỏ). Lưu dạng số `0xRRGGBB` cho Graphics, kèm hàm nhỏ đổi sang chuỗi `'#rrggbb'` cho Text.
   - `LAYOUT`: các vùng của màn Bàn chơi theo bảng mục 3.4 của UI brief (thanh trên y 0–56, đối thủ y 56–330, bàn y 300–540, bài người chơi x 24–330 y 470–700, thanh hành động x 360–1256 y 620–704), kích thước lá bài (lá người chơi ~130×180, lá chung và lá đối thủ nhỏ hơn), ô mức cược 40 px, bán kính bo góc, cỡ chữ.
   - `TIMING`: thời lượng chia bài, lật lá, hiện hành động cược, banner, lộ kết quả cần (bản thô), độ trễ suy nghĩ tạm của bot. Phase 3 sẽ thay độ trễ bot bằng khoảng 0,8–2,5 giây.
-- [ ] Tạo thư mục `src/session/` cho phần điều phối trận không phụ thuộc Phaser. Thêm luật ESLint: `src/session/` không import `phaser`, `scenes/`, `ui/`.
-- [ ] Cập nhật khối kiến trúc trong `CLAUDE.md` thêm dòng `session/`.
-- [ ] Mở rộng `tests/config.test.ts`:
+- [x] Tạo thư mục `src/session/` cho phần điều phối trận không phụ thuộc Phaser. Thêm luật ESLint: `src/session/` không import `phaser`, `scenes/`, `ui/`.
+- [x] Cập nhật khối kiến trúc trong `CLAUDE.md` thêm dòng `session/`.
+- [x] Mở rộng `tests/config.test.ts`:
   - Mọi vùng trong `LAYOUT` nằm trọn trong 1280×720.
   - Chiều cao nút hành động và cần gạt ≥ `DISPLAY.minTouchSize`.
   - 6 ô mức cược và 5 nút hành động vừa trong vùng của chúng.
 
 ## T2 – Chuỗi giao diện
 
-- [ ] Thêm khóa vào `vi.ts` rồi `en.ts`, lấy bản dịch từ bảng UI copy cuối `docs/stitch-ui-brief.md`:
+- [x] Thêm khóa vào `vi.ts` rồi `en.ts`, lấy bản dịch từ bảng UI copy cuối `docs/stitch-ui-brief.md`:
   - Màn bắt đầu: `BEST OF {n}`, nút bắt đầu.
   - Tên hai bên: "Bạn", tên bot tạm.
   - Vòng cược: Trước flop / Flop / Turn / River.
@@ -76,21 +76,21 @@ flowchart LR
   - Banner: ai đi trước, hành động của mỗi bên, so bài, bỏ bài, "{name} phải kéo {n} cần", An toàn, Nguy hiểm, ván hòa (hòa bài, kéo toàn An toàn), +1 chiến thắng, "Đang suy nghĩ…".
   - Kết thúc: thắng/thua trận, tỉ số, số ván hòa, "Ván tiếp", "Chơi lại".
   - Lớp phủ: "Hãy xoay ngang điện thoại để chơi".
-- [ ] Thêm test vào `tests/i18n/i18n.test.ts`: mỗi khóa có cùng tập placeholder `{...}` ở `vi` và `en`.
-- [ ] Đọc `?lang=en` trên URL (qua `isLocale`) để thử bản tiếng Anh trước khi có menu ở Phase 5.
+- [x] Thêm test vào `tests/i18n/i18n.test.ts`: mỗi khóa có cùng tập placeholder `{...}` ở `vi` và `en`.
+- [x] Đọc `?lang=en` trên URL (qua `isLocale`) để thử bản tiếng Anh trước khi có menu ở Phase 5.
 
 ## T3 – Phiên trận (`matchSession.ts`)
 
 Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. Không import Phaser, để test được và để `TableScene` chỉ còn việc diễn hoạt.
 
-- [ ] `createSession({ mode, seed, bot? })`: tạo trận bằng `createMatch`. Bot mặc định là `createRandomBot(seed + 1)`.
-- [ ] Các thành phần:
+- [x] `createSession({ mode, seed, bot? })`: tạo trận bằng `createMatch`. Bot mặc định là `createRandomBot(seed + 1)`.
+- [x] Các thành phần:
   - `view`: `viewFor(state, 0)`, thứ duy nhất UI đọc để vẽ trạng thái.
   - `turn`: `'deal' | 'human' | 'bot' | 'over'`, suy ra từ `currentActor` và `phase`.
   - `deal()`, `humanBet(move)`, `humanPull(lever)`, `botAct()`: mỗi hàm gọi `applyAction`, cập nhật state, trả `GameEvent[]`.
-- [ ] `botAct()` chỉ đưa cho bot `viewFor(state, 1)`. Hành động của bot vẫn đi qua `applyAction` nên luật vẫn được kiểm.
-- [ ] Gọi sai lượt (ví dụ `humanBet` khi đang là lượt bot) thì throw và state không đổi.
-- [ ] Test (`tests/session/matchSession.test.ts`):
+- [x] `botAct()` chỉ đưa cho bot `viewFor(state, 1)`. Hành động của bot vẫn đi qua `applyAction` nên luật vẫn được kiểm.
+- [x] Gọi sai lượt (ví dụ `humanBet` khi đang là lượt bot) thì throw và state không đổi.
+- [x] Test (`tests/session/matchSession.test.ts`):
   - Người chơi chọn ngẫu nhiên có hạt giống, chạy tới `'over'` ở cả bo3, bo5, bo7.
   - Bot giả ghi lại tham số: mọi lần gọi đều nhận `PlayerView` có `me === 1`, không có `holes`, `rngState`, `board` đầy đủ.
   - Cùng hạt giống và cùng chuỗi lựa chọn cho cùng chuỗi sự kiện.
@@ -98,11 +98,11 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
 
 ## T4 – Hàng đợi sự kiện (`eventQueue.ts`)
 
-- [ ] `EventQueue<E>` nhận hàm `play(event) => Promise<void>`, có `push(events)`, `busy`, `onIdle(cb)`, `clear()`.
-- [ ] Phát lần lượt: sự kiện sau chỉ bắt đầu khi promise của sự kiện trước xong. `push` trong lúc đang phát thì nối vào cuối.
-- [ ] `onIdle` chạy một lần mỗi khi hàng đợi cạn; scene dùng nó để mở khóa input hoặc cho bot đi.
-- [ ] `clear()` bỏ các sự kiện còn chờ; scene gọi khi `shutdown` để không chạy tween trên scene đã hủy.
-- [ ] Test (`tests/session/eventQueue.test.ts`) với `play` giả (promise tự resolve thủ công):
+- [x] `EventQueue<E>` nhận hàm `play(event) => Promise<void>`, có `push(events)`, `busy`, `onIdle(cb)`, `dispose()`.
+- [x] Phát lần lượt: sự kiện sau chỉ bắt đầu khi promise của sự kiện trước xong. `push` trong lúc đang phát thì nối vào cuối.
+- [x] `onIdle` chạy một lần mỗi khi hàng đợi cạn; scene dùng nó để mở khóa input hoặc cho bot đi.
+- [x] `dispose()` bỏ các sự kiện còn chờ và ngừng gọi `onIdle`; scene gọi khi `shutdown` để không chạy tween trên scene đã hủy.
+- [x] Test (`tests/session/eventQueue.test.ts`) với `play` giả (promise tự resolve thủ công):
   - Đúng thứ tự, không chồng nhau.
   - `busy` đúng trong và sau khi phát.
   - `push` lúc đang phát thì nối tiếp.
@@ -185,7 +185,7 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
   - `'bot'`: hiện "Đang suy nghĩ…", chờ `TIMING.botThinkMs`, gọi `botAct()`, đẩy sự kiện vào hàng đợi. Bot kéo cần cũng đi đường này, mỗi cần một lần.
   - `'deal'`: hiện nút "Ván tiếp"; bấm thì `deal()`.
   - `'over'`: không làm gì (T12 lo).
-- [ ] Khi scene `shutdown`: `queue.clear()`, gỡ listener.
+- [ ] Khi scene `shutdown`: `queue.dispose()`, gỡ listener.
 
 **Xong khi:** chơi được nhiều ván liên tiếp, bấm loạn hay bấm nhanh liên tục không gây lỗi hoặc gửi hành động sai lượt (xem console không có `IllegalActionError`).
 
