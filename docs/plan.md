@@ -70,6 +70,8 @@ Nhánh: `feat/core-game-mechanics`. Task chi tiết: [docs/tasks/phase-1.md](tas
 
 ## Phase 2 – Bàn chơi bản nháp
 
+Nhánh: `feat/drafting-table`. Task chi tiết: [docs/tasks/phase-2.md](tasks/phase-2.md).
+
 - [ ] `BootScene` tối giản → `TableScene` (Menu/Result tạm là nút bắt đầu và dòng kết quả)
 - [ ] Bố cục bằng hình khối theo tài liệu: tỉ số chấm tròn + số ván hòa, chỗ đối thủ + 2 lá úp, bàn hình thang, 5 ô lá chung, 6 ô mức cược, 2 lá của người chơi
 - [ ] `CardSprite` vẽ lá bằng hình + chữ (chưa cần atlas)
