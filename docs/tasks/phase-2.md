@@ -199,10 +199,10 @@ Lớp mỏng giữ `GameState` hiện tại và nối người chơi với bot. 
 
 ## T13 – Lớp phủ "Hãy xoay ngang"
 
-- [ ] Làm bằng DOM và CSS, không cần Phaser: thêm `<div id="rotate-overlay">` vào `index.html`, hiện bằng `@media (orientation: portrait) and (pointer: coarse)` trong `style.css`.
-- [ ] `main.ts` điền chữ bằng `t('rotate.message')` và cập nhật lại khi đổi ngôn ngữ.
-- [ ] Biểu tượng điện thoại xoay vẽ bằng CSS hoặc SVG nội tuyến, màu hổ phách.
-- [ ] Không hiện trên máy tính kể cả khi cửa sổ hẹp và cao.
+- [x] Làm bằng DOM và CSS, không cần Phaser: thêm `<div id="rotate-overlay">` vào `index.html`, hiện bằng `@media (orientation: portrait) and (pointer: coarse)` trong `style.css`.
+- [x] `main.ts` điền chữ bằng `t('rotate.message')`. Ở Phase 2 ngôn ngữ chỉ đổi lúc tải trang (`?lang=`); menu đổi ngôn ngữ ở Phase 5 cần điền lại chữ này.
+- [x] Biểu tượng điện thoại xoay vẽ bằng CSS hoặc SVG nội tuyến, màu hổ phách.
+- [x] Không hiện trên máy tính kể cả khi cửa sổ hẹp và cao.
 
 ## T14 – Thử trên máy tính và điện thoại
 

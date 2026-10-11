@@ -3,7 +3,7 @@ import '@fontsource/saira-stencil/700.css';
 import './style.css';
 import Phaser from 'phaser';
 import { DISPLAY } from './config';
-import { isLocale, setLocale } from './i18n';
+import { isLocale, setLocale, t } from './i18n';
 import { BootScene } from './scenes/BootScene';
 import { TableScene } from './scenes/TableScene';
 
@@ -25,6 +25,10 @@ if (isLocale(lang)) {
   setLocale(lang);
   document.documentElement.lang = lang;
 }
+
+// The rotate overlay is plain DOM so it works even before Phaser boots.
+const rotateMessage = document.getElementById('rotate-message');
+if (rotateMessage) rotateMessage.textContent = t('rotate.message');
 
 await loadFonts();
 

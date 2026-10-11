@@ -11,6 +11,34 @@
   </head>
   <body>
     <div id="app"></div>
+    <div id="rotate-overlay" aria-live="polite">
+      <svg viewBox="0 0 64 64" width="96" height="96" aria-hidden="true">
+        <rect
+          x="22"
+          y="8"
+          width="20"
+          height="36"
+          rx="3"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+        />
+        <rect
+          x="10"
+          y="38"
+          width="36"
+          height="20"
+          rx="3"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+          opacity="0.45"
+        />
+        <path d="M48 20 a14 14 0 0 1 6 18" fill="none" stroke="currentColor" stroke-width="3" />
+        <path d="M50 36 l4 4 l3 -5" fill="none" stroke="currentColor" stroke-width="3" />
+      </svg>
+      <p id="rotate-message"></p>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
