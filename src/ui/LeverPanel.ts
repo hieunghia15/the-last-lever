@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, cssColor, DISPLAY, LAYOUT, LEVERS, TIMING } from '../config';
+import { COLORS, cssColor, DISPLAY, LAYOUT, LEVER_FX, LEVERS } from '../config';
 import type { LeverView } from '../core/gameState';
 import { t } from '../i18n';
 import { tweenAsync, wait } from './anim';
@@ -12,7 +12,9 @@ import {
   drawPanel,
   drawRivets,
 } from './decor';
+import type { ElectricFx } from './ElectricFx';
 import { ICONS, iconKey, type IconName } from './icons';
+import type { Point } from './lightningModel';
 import { textStyle } from './text';
 import { leverHandleTexture } from './textures';
 
@@ -47,11 +49,13 @@ const KNOB_ICON: Record<LeverState, IconName> = {
 };
 
 /**
- * The lever board: six levers in a riveted panel over the darkened table. Tapping a lever
- * pulls its handle down; the lamp then shows Safe or Danger. Phase 4 adds the electric effects.
+ * The lever board: six levers in a riveted panel that rises over the darkened table. Tapping a
+ * lever pulls its handle down; after a pause the lamp shows Safe, or Danger with sparks.
  */
 export class LeverPanel extends Phaser.GameObjects.Container {
   private readonly levers: LeverSprite[] = [];
+  /** The dimmer and lamp stay put while the board slides, so they live outside it. */
+  private readonly shade: Phaser.GameObjects.Container;
   private readonly title: Phaser.GameObjects.Text;
   private readonly counterChip: Phaser.GameObjects.Graphics;
   private readonly counterDot: Phaser.GameObjects.Arc;
@@ -64,14 +68,19 @@ export class LeverPanel extends Phaser.GameObjects.Container {
   constructor(
     scene: Phaser.Scene,
     private readonly onPull: (lever: number) => void,
+    private readonly fx: ElectricFx,
   ) {
     super(scene, 0, 0);
     const p = LAYOUT.leverPanel;
     const panelRect = { x: p.x, y: p.y, width: p.width, height: p.height };
 
-    // The backdrop is interactive so taps never fall through to the table underneath.
+    // The backdrop is interactive so taps never fall through to the table underneath, the
+    // home button included: nobody walks away mid-challenge (decision #19).
     const dim = addBackdrop(scene, 'lever').setInteractive();
-    const lamp = addLamp(scene);
+    this.shade = scene.add
+      .container(0, 0, [dim, addLamp(scene)])
+      .setDepth(100)
+      .setVisible(false);
     const panel = scene.add.graphics();
     drawGlowRect(panel, panelRect, 0x000000, 0.25, 24, 16);
     drawPanel(panel, panelRect, {
@@ -82,7 +91,7 @@ export class LeverPanel extends Phaser.GameObjects.Container {
       radius: 16,
     });
     drawRivets(panel, panelRect, { alpha: 1 });
-    this.add([dim, lamp, panel]);
+    this.add(panel);
 
     const contentLeft = p.x + 2 + 24 + 8;
     const contentRight = p.x + p.width - 2 - 24 - 8;
@@ -118,7 +127,8 @@ export class LeverPanel extends Phaser.GameObjects.Container {
       this.levers.push(this.buildLever(left + i * (width + gap), y, i));
     }
 
-    this.setDepth(100).setVisible(false);
+    // Just above the dimmer, below the speech bubble (110) and the bolts (ElectricFx).
+    this.setDepth(101).setVisible(false);
     scene.add.existing(this);
   }
 
@@ -137,21 +147,48 @@ export class LeverPanel extends Phaser.GameObjects.Container {
     }
     this.levers.forEach((_, i) => this.paint(i, 'unknown'));
     this.setCounter(0);
-    this.setAlpha(0).setVisible(true);
-    await tweenAsync(this.scene, { targets: this, alpha: 1, duration: TIMING.panelFade });
+    const { slide, dimMs } = LEVER_FX;
+    this.shade.setAlpha(0).setVisible(true);
+    this.setPosition(0, slide.offsetY).setAlpha(0).setVisible(true);
+    await Promise.all([
+      tweenAsync(this.scene, { targets: this.shade, alpha: 1, duration: dimMs }),
+      tweenAsync(this.scene, {
+        targets: this,
+        y: 0,
+        alpha: 1,
+        duration: slide.ms,
+        ease: slide.ease,
+      }),
+    ]);
   }
 
   async close(): Promise<void> {
     this.accepting = false;
     if (!this.visible) return;
-    await tweenAsync(this.scene, { targets: this, alpha: 0, duration: TIMING.panelFade });
-    this.setVisible(false);
+    const { slide, dimMs } = LEVER_FX;
+    await Promise.all([
+      tweenAsync(this.scene, { targets: this.shade, alpha: 0, duration: dimMs }),
+      tweenAsync(this.scene, {
+        targets: this,
+        y: slide.offsetY,
+        alpha: 0,
+        duration: slide.ms * 0.6,
+        ease: 'Quad.easeIn',
+      }),
+    ]);
+    this.setVisible(false).setPosition(0, 0);
+    this.shade.setVisible(false);
   }
 
-  /** The handle travels down while the lamp blinks amber, then the lamp shows the result. */
+  /**
+   * Pull, pause, reveal. The handle travels down and shivers while the lamp blinks amber; that
+   * beat is the same for Safe and Danger, so nothing gives the result away. Only then does the
+   * lamp light. Danger sparks and arcs keep going after this resolves.
+   */
   async reveal(lever: number, danger: boolean): Promise<void> {
     const sprite = this.levers[lever];
     if (!sprite) return;
+    const { pull, suspenseMs, tremble } = LEVER_FX;
     this.paint(lever, 'pulling');
     const blink = this.scene.tweens.add({
       targets: [sprite.lamp, sprite.lampGlow],
@@ -160,21 +197,75 @@ export class LeverPanel extends Phaser.GameObjects.Container {
       yoyo: true,
       repeat: -1,
     });
-    const pulled = this.handleY(sprite, true);
     await tweenAsync(this.scene, {
       targets: sprite.handle,
-      y: (sprite.handle.y + pulled) / 2,
-      angle: 6,
-      duration: TIMING.leverPull,
+      y: this.handleY(sprite, true),
+      duration: pull.ms,
       ease: 'Quad.easeIn',
     });
-    await wait(this.scene, TIMING.leverReveal);
+    const home = sprite.handle.x;
+    const shiver = this.scene.tweens.add({
+      targets: sprite.handle,
+      x: { from: home - tremble.px, to: home + tremble.px },
+      duration: tremble.ms,
+      yoyo: true,
+      repeat: -1,
+    });
+    await wait(this.scene, suspenseMs);
+    shiver.stop();
     blink.stop();
+    sprite.handle.setX(home);
     sprite.lamp.setAlpha(1);
     sprite.lampGlow.setAlpha(0.8);
     this.paint(lever, danger ? 'danger' : 'safe');
     this.setCounter(this.levers.filter((l) => l.state === 'safe' || l.state === 'danger').length);
-    await wait(this.scene, TIMING.afterLever);
+    this.scene.tweens.add({
+      targets: sprite.status,
+      scale: { from: 1.35, to: 1 },
+      duration: 220,
+      ease: 'Back.easeOut',
+    });
+    if (danger) this.shock(sprite);
+    else this.flare(sprite);
+  }
+
+  /**
+   * The bot's hand drifts over a few levers, nudging each as if about to pull, then settles on
+   * the last one in `path`, which is the lever it pulls next.
+   */
+  async hesitate(path: readonly number[]): Promise<void> {
+    const { hoverMs, nudgePx, settleMs } = LEVER_FX.hesitate;
+    for (const [step, lever] of path.entries()) {
+      const sprite = this.levers[lever];
+      if (!sprite) continue;
+      this.highlight(sprite, true);
+      if (step === path.length - 1) {
+        await wait(this.scene, settleMs);
+        break;
+      }
+      const rest = sprite.handle.y;
+      await tweenAsync(this.scene, {
+        targets: sprite.handle,
+        y: rest + nudgePx,
+        duration: hoverMs / 2,
+        yoyo: true,
+        ease: 'Sine.easeInOut',
+      });
+      sprite.handle.setY(rest);
+      this.highlight(sprite, false);
+    }
+  }
+
+  /** What the board shows right now, for working out the bot's hesitation. */
+  shown(): LeverView[] {
+    return this.levers.map((l) => (l.state === 'pulling' ? 'unknown' : l.state));
+  }
+
+  /** A lever's lamp on the 1280×720 frame, where full-screen bolts start. */
+  leverPoint(lever: number): Point {
+    const sprite = this.levers[lever];
+    if (!sprite) return { x: DISPLAY.width / 2, y: DISPLAY.height / 2 };
+    return { x: sprite.lamp.x + this.x, y: sprite.lamp.y + this.y };
   }
 
   /** Brings every lever in line with the view (used when re-rendering from state). */
@@ -191,6 +282,48 @@ export class LeverPanel extends Phaser.GameObjects.Container {
     if (!this.accepting || this.levers[lever]?.state !== 'unknown') return;
     this.accepting = false;
     this.onPull(lever);
+  }
+
+  /** Safe: the green lamp blooms and settles. */
+  private flare(sprite: LeverSprite): void {
+    const scale = sprite.lampGlow.scale;
+    this.scene.tweens.add({
+      targets: sprite.lampGlow,
+      scale: scale * 1.8,
+      duration: 220,
+      yoyo: true,
+      ease: 'Sine.easeOut',
+      onComplete: () => sprite.lampGlow.setScale(scale),
+    });
+  }
+
+  /** Danger: sparks from the lamp, arcs down the handle, and the whole board jolts. */
+  private shock(sprite: LeverSprite): void {
+    const { lever } = LAYOUT.leverPanel;
+    const lamp = { x: sprite.lamp.x + this.x, y: sprite.lamp.y + this.y };
+    const knob = { x: sprite.handle.x + this.x, y: sprite.handle.y + sprite.knob.y + this.y };
+    const left = lamp.x - lever.width / 2 + 8;
+    const right = lamp.x + lever.width / 2 - 8;
+    this.fx.burst(lamp, COLORS.danger);
+    this.fx.burst(knob, COLORS.shock);
+    void this.fx.zap(
+      [
+        { from: lamp, to: knob },
+        { from: knob, to: { x: left, y: knob.y + 30 } },
+        { from: knob, to: { x: right, y: knob.y + 50 } },
+      ],
+      LEVER_FX.bolt.ms,
+    );
+    const { px, ms, repeats } = LEVER_FX.jolt;
+    this.scene.tweens.add({
+      targets: this,
+      x: { from: -px, to: px },
+      duration: ms,
+      yoyo: true,
+      repeat: repeats,
+      ease: 'Sine.easeInOut',
+      onComplete: () => this.setX(0),
+    });
   }
 
   private setCounter(pulled: number): void {
@@ -238,7 +371,7 @@ export class LeverPanel extends Phaser.GameObjects.Container {
     const bar = scene.add.rectangle(0, 0, 32, 12, COLORS.rivet);
     const knob = scene.add.circle(0, 0, 20, COLORS.amber);
     const knobIcon = scene.add.image(0, 0, iconKey('power'));
-    // Even tilted mid-pull the handle stays inside its slot, so no clipping mask is needed.
+    // Pulled, nudged or shivering, the handle stays inside its slot, so no clipping mask is needed.
     const handleBox = scene.add.container(cx, 0, [grip, bar, knob, knobIcon]);
 
     const status = scene.add
@@ -275,6 +408,11 @@ export class LeverPanel extends Phaser.GameObjects.Container {
     return sprite;
   }
 
+  private highlight(sprite: LeverSprite, active: boolean): void {
+    const { lever } = LAYOUT.leverPanel;
+    this.drawCard(sprite, sprite.handle.x - lever.width / 2, lever.y, active);
+  }
+
   private drawCard(sprite: LeverSprite, x: number, y: number, active: boolean): void {
     const { lever } = LAYOUT.leverPanel;
     const rect = { x, y, width: lever.width, height: lever.height };
@@ -301,10 +439,8 @@ export class LeverPanel extends Phaser.GameObjects.Container {
     const sprite = this.levers[lever];
     if (!sprite) return;
     sprite.state = state;
-    const { lever: size, handle } = LAYOUT.leverPanel;
-    const x = sprite.handle.x - size.width / 2;
-    const y = LAYOUT.leverPanel.lever.y;
-    this.drawCard(sprite, x, y, state === 'pulling');
+    const { handle } = LAYOUT.leverPanel;
+    this.highlight(sprite, state === 'pulling');
 
     const lit = state !== 'unknown';
     sprite.lamp

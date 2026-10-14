@@ -7,6 +7,7 @@ import {
   DIFFICULTY_PERSONALITY,
   DISPLAY,
   LAYOUT,
+  LEVER_FX,
   LEVERS,
   MATCH_MODES,
   PERSONALITIES,
@@ -67,6 +68,58 @@ describe('config', () => {
     it('plays a different personality at each difficulty', () => {
       const picked = DIFFICULTIES.map((d) => DIFFICULTY_PERSONALITY[d]);
       expect(new Set(picked).size).toBe(DIFFICULTIES.length);
+    });
+  });
+
+  describe('lever effects', () => {
+    it('uses positive durations and ordered ranges', () => {
+      const fx = LEVER_FX;
+      const durations = [
+        fx.slide.ms,
+        fx.dimMs,
+        fx.pull.ms,
+        fx.suspenseMs,
+        fx.afterMs,
+        fx.tremble.ms,
+        fx.bolt.flickerMs,
+        fx.bolt.fadeMs,
+        fx.bolt.ms,
+        fx.sparks.lifespanMs,
+        fx.jolt.ms,
+        fx.playerHit.flashMs,
+        fx.playerHit.shakeMs,
+        fx.playerHit.boltMs,
+        fx.botHit.shakeMs,
+        fx.botHit.flashMs,
+        fx.hesitate.hoverMs,
+        fx.hesitate.settleMs,
+        fx.botPullThinkMs.min,
+      ];
+      for (const ms of durations) expect(ms).toBeGreaterThan(0);
+      for (const range of [fx.hesitate.hovers, fx.botPullThinkMs, fx.sparks.speed]) {
+        expect(range.min).toBeLessThanOrEqual(range.max);
+      }
+      expect(fx.hesitate.hovers.min).toBeGreaterThanOrEqual(0);
+    });
+
+    it('never hovers over more levers than the board holds', () => {
+      expect(LEVER_FX.hesitate.hovers.max).toBeLessThan(LEVERS.count);
+    });
+
+    it('flashes at most three times a second', () => {
+      // A bot-hit flash fades in and out over flashMs each; the player's hit flashes once.
+      expect(2 * LEVER_FX.botHit.flashMs).toBeGreaterThanOrEqual(1000 / 3);
+      for (const alpha of [LEVER_FX.playerHit.flashAlpha, LEVER_FX.botHit.flashAlpha]) {
+        expect(alpha).toBeGreaterThan(0);
+        expect(alpha).toBeLessThanOrEqual(1);
+      }
+    });
+
+    it('keeps each bolt to a bounded number of points', () => {
+      expect(Number.isInteger(LEVER_FX.bolt.depth)).toBe(true);
+      expect(LEVER_FX.bolt.depth).toBeGreaterThanOrEqual(1);
+      expect(LEVER_FX.bolt.depth).toBeLessThanOrEqual(6);
+      expect(LEVER_FX.bolt.branchChance).toBeLessThanOrEqual(1);
     });
   });
 

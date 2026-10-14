@@ -1,6 +1,6 @@
 # Phase 3 – Bot: danh sách task
 
-Nhánh: `feat/bot`. Nguồn: `docs/plan.md` (Phase 3, quyết định #4, #5, #6, #9), mục Bot trong `the-last-lever-thiet-ke.md`. Skill nên đọc: `bot-ai`, `game-rules-core`, `poker-engine`, `lever-challenge`, `testing-vitest`, `time-and-timers`.
+Nhánh: `feat/bot`. Nguồn: `docs/plan.md` (Phase 3, quyết định #4, #5, #6, #9), mục Bot trong `docs/the-last-lever-thiet-ke.md`. Skill nên đọc: `bot-ai`, `game-rules-core`, `poker-engine`, `lever-challenge`, `testing-vitest`, `time-and-timers`.
 
 **Mục tiêu của phase:** thay bot ngẫu nhiên bằng bot thật có ba tính cách. Mỗi tính cách thắng bot ngẫu nhiên ≥ 60% và bot luôn-Theo ≥ 55% trên 1.000 trận, mọi cặp tính cách nằm trong 35–65%, ba tính cách đã gán vào Dễ / Vừa / Khó, và khi chơi tay thấy được bot lừa (bong bóng thoại nói dối, ván tăng khi bài yếu).
 

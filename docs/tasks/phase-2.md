@@ -1,6 +1,6 @@
 # Phase 2 – Bàn chơi bản nháp: danh sách task
 
-Nhánh: `feat/drafting-table`. Nguồn: `docs/plan.md` (Phase 2 và bảng quyết định), bố cục trong `the-last-lever-thiet-ke.md` và `docs/stitch-ui-brief.md` (mục 3.4, 3.5, 3.7). Skill nên đọc: `game-rules-core`, `scenes`, `tweens`, `graphics-and-shapes`, `text-and-bitmaptext`, `input-keyboard-mouse-touch`, `scale-and-responsive`.
+Nhánh: `feat/drafting-table`. Nguồn: `docs/plan.md` (Phase 2 và bảng quyết định), bố cục trong `docs/the-last-lever-thiet-ke.md` và `docs/stitch-ui-brief.md` (mục 3.4, 3.5, 3.7). Skill nên đọc: `game-rules-core`, `scenes`, `tweens`, `graphics-and-shapes`, `text-and-bitmaptext`, `input-keyboard-mouse-touch`, `scale-and-responsive`.
 
 **Mục tiêu của phase:** bấm nút chơi hết một trận với bot ngẫu nhiên, trên máy tính và trên điện thoại qua `npm run dev:host`. Mọi thứ vẽ bằng hình khối và chữ, chưa có hình thật hay hiệu ứng.
 

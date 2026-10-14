@@ -112,6 +112,52 @@ export const DIFFICULTY_PERSONALITY: Record<Difficulty, PersonalityId> = {
   hard: 'reckless',
 };
 
+/**
+ * The lever challenge, the game's main moment. Everything up to the lamp (pull, pause, the bot's
+ * hesitation) must look identical for Safe and Danger, so nothing gives the result away early.
+ */
+export const LEVER_FX = {
+  /** The board rises from below while the table behind it darkens. */
+  slide: { ms: 380, offsetY: 120, ease: 'Back.easeOut' },
+  dimMs: 260,
+  pull: { ms: 300 },
+  /** The pause between the pull and the lamp (plan: about one second). */
+  suspenseMs: 1000,
+  afterMs: 700,
+  /** The handle shivers during the pause. */
+  tremble: { px: 1.5, ms: 50 },
+  /** Lightning shape (see lightningModel.ts); it is redrawn every flickerMs so it crackles. */
+  bolt: {
+    depth: 4,
+    jitter: 0.22,
+    branchChance: 0.2,
+    branchScale: 0.35,
+    width: 2,
+    glowWidth: 9,
+    flickerMs: 60,
+    fadeMs: 140,
+    ms: 450,
+  },
+  sparks: { count: 18, speed: { min: 80, max: 280 }, lifespanMs: 520, gravity: 420 },
+  /** The board jolts when a Danger lamp lights. */
+  jolt: { px: 5, ms: 45, repeats: 3 },
+  /** Only the player's own hit flashes the screen, and only once. */
+  playerHit: {
+    flashMs: 240,
+    flashAlpha: 0.85,
+    shakeMs: 450,
+    shakeIntensity: 0.012,
+    edgeBolts: 6,
+    boltMs: 520,
+  },
+  /** One flash is a fade in and a fade out of flashMs each. */
+  botHit: { shakeMs: 520, shakePx: 6, flashes: 3, flashMs: 170, flashAlpha: 0.7, bolts: 4 },
+  /** Levers the bot hovers over before the one it pulls, and how long it lingers on each. */
+  hesitate: { hovers: { min: 1, max: 3 }, hoverMs: 420, nudgePx: 14, settleMs: 320 },
+  /** Short wait before a bot pull; the hesitation carries the drama. */
+  botPullThinkMs: { min: 300, max: 600 },
+} as const;
+
 // Palette from docs/stitch-ui-brief.md and the Figma file. Numbers for Graphics; cssColor() for Text.
 export const COLORS = {
   night: 0x14100c,
@@ -262,11 +308,7 @@ export const TIMING = {
   bannerHold: 1500,
   meterPulse: 180,
   panelFade: 220,
-  /** Pause before a lever shows its colour; Phase 4 turns this into the real suspense beat. */
-  leverReveal: 500,
-  afterLever: 800,
   /** Shortest time the loading screen stays up, so it never just flashes. */
   bootMin: 600,
-  leverPull: 260,
   pageTurn: 160,
 } as const;

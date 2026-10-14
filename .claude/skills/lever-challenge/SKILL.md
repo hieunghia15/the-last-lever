@@ -69,7 +69,13 @@ Kiểm tra bằng test, không bằng `if` lúc chạy:
 
 ## Hiển thị (ngoài lõi, chỉ để biết)
 
-`LeverPanel` nhận sự kiện `challengeStarted` và `leverPulled { seat, lever, danger }`. Nhịp ngừng khoảng 1 giây trước khi lộ kết quả là việc của scene, đọc độ dài từ `config.ts`. Lõi trả kết quả ngay lập tức.
+Lõi trả kết quả ngay lập tức; mọi nhịp ngừng và hiệu ứng là việc của lớp hiển thị, đọc số từ khối `LEVER_FX` trong `config.ts` (Phase 4).
+
+- `TableScene.play()` phát `challengeStarted` → `LeverPanel.open()` (nền tối mờ dần, bảng trượt lên), `leverPulled` → (bot: `hesitate(hesitationPath(...))`) → `reveal()` → (người chơi trúng Nguy hiểm: `shockPlayer`) → chờ `afterMs`, `roundEnded` → `close()` → (bot trúng Nguy hiểm: `OpponentPortrait.shock`, phát sau khi bảng đóng vì bảng che nhân vật) → tỉ số, banner.
+- `reveal()` gồm ba nhịp: kéo (`pull.ms`), ngừng (`suspenseMs`, tay cần rung, đèn nháy hổ phách), lộ (Safe: đèn xanh bừng lên; Nguy hiểm: đèn đỏ, tia lửa, tia điện, bảng giật). **Mọi thứ trước khi đèn sáng phải giống hệt nhau giữa Safe và Nguy hiểm**, kể cả độ dài và số cần bot lướt qua, để không lộ kết quả.
+- Hình tia điện và chuỗi cần chần chừ là hàm thuần (`src/ui/lightningModel.ts`, `src/ui/leverModel.ts`, có test). `ElectricFx` vẽ chúng và dùng `Rng` hiệu ứng `seed + 3`, không dùng `Math.random`.
+- Nhịp lóe không quá 3 lần mỗi giây (`tests/config.test.ts`). Chỉ cú trúng của người chơi mới lóe trắng toàn màn hình.
+- Trong lúc thử thách, nền tối chặn cả nút về menu (quyết định #19).
 
 ## Checklist trước khi xong
 
