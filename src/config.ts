@@ -35,7 +35,7 @@ export const LEVERS = {
   maxDanger: 5,
 } as const;
 
-/** Monte Carlo win-rate estimate; the bot reuses it in Phase 3. */
+/** Monte Carlo win-rate estimate, shared by the bot and the hand panel. */
 export const EQUITY = {
   trials: 300,
 } as const;
@@ -53,6 +53,64 @@ export const HAND_HINT = {
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export type DifficultyChoice = Difficulty | 'random';
+
+/** Bot behaviour (decisions #5, #6, #9). Equity trials come from EQUITY.trials. */
+export const BOT = {
+  /** Thinking pause before every bot move, drawn uniformly; the table animates it. */
+  thinkMs: { min: 800, max: 2500 },
+  /** Share of betting turns on which the bot says something. */
+  talkChance: 0.3,
+  /** Equity at or above which the honest line is "strong", and below which it is "weak". */
+  talkStrongAt: 0.6,
+  talkWeakAt: 0.4,
+  talkMs: 2000,
+  /** Added to the fear factor when the opponent is one win away, and when the bot leads. */
+  fearWhenOpponentOneAway: 0.2,
+  fearWhenLeading: -0.1,
+  /**
+   * fear scales the risk of playing on; raiseAt / allInAt are equity thresholds; bluffRaise /
+   * bluffAllIn are per-round chances to force a raise; lieRate is how often a line is reversed.
+   * Fear is below the design document's 1.3 / 1.0 / 0.7: its formula weighs only the bot's own
+   * lever risk, so those values folded far too often. Reckless raises a little later than the
+   * document's 0.5 / 0.65 to keep its bluffs affordable (docs/balance.md).
+   */
+  personalities: {
+    cautious: {
+      fear: 0.9,
+      raiseAt: 0.7,
+      allInAt: 0.9,
+      bluffRaise: 0,
+      bluffAllIn: 0,
+      lieRate: 0.1,
+    },
+    balanced: {
+      fear: 0.75,
+      raiseAt: 0.6,
+      allInAt: 0.8,
+      bluffRaise: 0,
+      bluffAllIn: 0,
+      lieRate: 0.2,
+    },
+    reckless: {
+      fear: 0.6,
+      raiseAt: 0.55,
+      allInAt: 0.7,
+      bluffRaise: 0.15,
+      bluffAllIn: 0.05,
+      lieRate: 0.35,
+    },
+  },
+} as const;
+
+export type PersonalityId = keyof typeof BOT.personalities;
+export const PERSONALITIES = Object.keys(BOT.personalities) as PersonalityId[];
+
+/** Which personality plays each difficulty; set from the balance report (docs/balance.md). */
+export const DIFFICULTY_PERSONALITY: Record<Difficulty, PersonalityId> = {
+  easy: 'cautious',
+  medium: 'balanced',
+  hard: 'reckless',
+};
 
 // Palette from docs/stitch-ui-brief.md and the Figma file. Numbers for Graphics; cssColor() for Text.
 export const COLORS = {
@@ -207,8 +265,6 @@ export const TIMING = {
   /** Pause before a lever shows its colour; Phase 4 turns this into the real suspense beat. */
   leverReveal: 500,
   afterLever: 800,
-  /** Fixed for the random bot; Phase 3 replaces it with a 0.8–2.5 s range. */
-  botThink: 900,
   /** Shortest time the loading screen stays up, so it never just flashes. */
   bootMin: 600,
   leverPull: 260,

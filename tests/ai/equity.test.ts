@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { estimateEquity } from '../../src/ai/equity';
 import { Rng } from '../../src/core/rng';
-import { cards } from '../testing';
+import { cards, isCI } from '../testing';
 
 const SEED = 20261011;
 const equity = (hole: string, board = '', trials = 2000) =>
@@ -31,5 +31,22 @@ describe('estimateEquity', () => {
 
   it('returns 0 for zero trials', () => {
     expect(equity('As Ah', '', 0)).toBe(0);
+  });
+});
+
+describe('performance', () => {
+  // The real budget is < 50 ms on a phone for the default trial count, measured by hand.
+  // Pre-flop is the slowest case: five community cards are drawn per trial.
+  it.skipIf(isCI)('runs the default trial count before the flop well inside budget', () => {
+    const rng = new Rng(SEED);
+    const hole = cards('Jh Td');
+    estimateEquity(hole, [], rng); // warm up the JIT
+    let best = Infinity;
+    for (let run = 0; run < 5; run++) {
+      const start = performance.now();
+      estimateEquity(hole, [], rng);
+      best = Math.min(best, performance.now() - start);
+    }
+    expect(best).toBeLessThan(15);
   });
 });

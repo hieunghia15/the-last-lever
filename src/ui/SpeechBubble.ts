@@ -9,8 +9,8 @@ const ARROW = 11;
 const ARROW_INSET = 40;
 
 /**
- * The opponent's speech bubble, anchored by its top-right corner. Phase 3 fills it with
- * (possibly lying) lines; until then it shows the thinking state.
+ * The opponent's speech bubble, anchored by its top-right corner: the thinking state and the
+ * bot's (possibly lying) lines.
  */
 export class SpeechBubble extends Phaser.GameObjects.Container {
   private readonly bg: Phaser.GameObjects.Graphics;
@@ -29,7 +29,8 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
       .setOrigin(0, 0);
     this.note = scene.add.text(0, 0, '', textStyle(10, COLORS.muted)).setOrigin(0, 0);
     this.add([this.bg, this.line, this.note]);
-    this.setVisible(false);
+    // Above the lever panel (depth 100), so the opponent can talk over its dimmer.
+    this.setDepth(110).setVisible(false);
     scene.add.existing(this);
   }
 

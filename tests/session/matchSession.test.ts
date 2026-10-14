@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRandomBot } from '../../src/ai/baselineBots';
+import { createBot } from '../../src/ai/botBrain';
 import type { Bot } from '../../src/ai/types';
 import type { MatchMode } from '../../src/config';
 import { IllegalActionError } from '../../src/core/errors';
@@ -19,7 +20,7 @@ function playOut(session: MatchSession, humanSeed: number): GameEvent[] {
         events.push(...session.deal());
         break;
       case 'bot':
-        events.push(...session.botAct());
+        events.push(...session.botAct().events);
         break;
       case 'human':
         if (view.phase === 'betting') {
@@ -43,6 +44,36 @@ describe('MatchSession', () => {
       const { wins, winsNeeded } = session.view;
       expect(Math.max(...wins)).toBe(winsNeeded);
     }
+  });
+
+  it.each<MatchMode>(['bo3', 'bo5', 'bo7'])(
+    'plays a %s match against a personality bot',
+    (mode) => {
+      for (let seed = 1; seed <= 5; seed++) {
+        const bot = createBot({ personality: 'reckless', seed: seed + 1, trials: 40 });
+        const events = playOut(new MatchSession({ mode, seed, bot }), seed * 7);
+        expect(events.at(-1)?.type).toBe('matchEnded');
+      }
+    },
+  );
+
+  it('passes on what the bot said and why it moved', () => {
+    const inner = createRandomBot(5);
+    const talker: Bot = {
+      chooseBet: (view) => ({
+        ...inner.chooseBet(view),
+        talk: 'strong',
+        trace: { equity: 0.9, fear: 1, riskFold: null, riskGo: null, bluffed: false, lied: true },
+      }),
+      chooseLever: (view) => inner.chooseLever(view),
+    };
+    const session = new MatchSession({ mode: 'bo3', seed: 2, bot: talker });
+    session.deal();
+    while (session.turn === 'human') session.humanBet('check');
+    const turn = session.botAct();
+    expect(turn.events.length).toBeGreaterThan(0);
+    expect(turn.talk).toBe('strong');
+    expect(turn.trace?.lied).toBe(true);
   });
 
   it('starts waiting for a deal', () => {

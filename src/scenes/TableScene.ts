@@ -1,9 +1,21 @@
 import Phaser from 'phaser';
-import { BETTING, COLORS, DISPLAY, LAYOUT, OPPONENTS, TIMING, type Difficulty } from '../config';
+import { createBot } from '../ai/botBrain';
+import {
+  BETTING,
+  BOT as BOT_TUNING,
+  COLORS,
+  DIFFICULTY_PERSONALITY,
+  DISPLAY,
+  LAYOUT,
+  OPPONENTS,
+  TIMING,
+  type Difficulty,
+} from '../config';
 import { STREETS, type BetMove } from '../core/betting';
 import type { Card } from '../core/cards';
 import type { GameEvent, PlayerView, Seat } from '../core/gameState';
-import { t } from '../i18n';
+import { Rng } from '../core/rng';
+import { t, type MessageKey } from '../i18n';
 import { EventQueue } from '../session/eventQueue';
 import { BOT, HUMAN, MatchSession } from '../session/matchSession';
 import { browserStore, recordMatch } from '../session/profile';
@@ -18,6 +30,7 @@ import { HandPanel } from '../ui/HandPanel';
 import { LeverPanel } from '../ui/LeverPanel';
 import { ScoreBar } from '../ui/ScoreBar';
 import { SpeechBubble } from '../ui/SpeechBubble';
+import { createTalkPicker, type TalkGroup } from '../ui/talkModel';
 import { textStyle } from '../ui/text';
 import { feltTexture } from '../ui/textures';
 import type { ConfirmSceneData } from './ConfirmScene';
@@ -26,6 +39,9 @@ import { bestOf, type ResultSceneData, type TableSceneData } from './flow';
 export type { TableSceneData } from './flow';
 
 const BOARD_SIZE = 5;
+
+/** ?debug=bot logs why the bot moved (equity, risks, bluffs, lies) to the console. */
+const debugBot = (): boolean => new URLSearchParams(location.search).get('debug') === 'bot';
 
 /**
  * The whole match. Animation only: every move goes through MatchSession, and the scene
@@ -45,6 +61,11 @@ export class TableScene extends Phaser.Scene {
   private banner!: Phaser.GameObjects.Container;
   private bannerText!: Phaser.GameObjects.Text;
   private bannerTimer: Phaser.Time.TimerEvent | null = null;
+  private bubbleTimer: Phaser.Time.TimerEvent | null = null;
+  /** Thinking pauses and speech lines; seeded from the match so ?seed= replays the pacing too. */
+  private tableRng!: Rng;
+  private pickTalk!: (group: TalkGroup) => MessageKey;
+  private debugBot = false;
   private actionBar!: ActionBar;
   private leverPanel!: LeverPanel;
   private handPanel!: HandPanel;
@@ -64,13 +85,21 @@ export class TableScene extends Phaser.Scene {
 
   init(data: TableSceneData): void {
     this.setup = data;
-    this.session = new MatchSession({ mode: data.mode, seed: data.seed });
+    const bot = createBot({
+      personality: DIFFICULTY_PERSONALITY[data.difficulty],
+      seed: data.seed + 1,
+    });
+    this.session = new MatchSession({ mode: data.mode, seed: data.seed, bot });
+    this.tableRng = new Rng(data.seed + 2);
+    this.pickTalk = createTalkPicker(this.tableRng);
+    this.debugBot = debugBot();
     this.names = [t('seat.you'), OPPONENTS[data.difficulty].name];
     this.botCards = [];
     this.boardCards = [];
     this.playerCards = [];
     this.revealed = 0;
     this.bannerTimer = null;
+    this.bubbleTimer = null;
     this.hole = [];
     this.board = [];
   }
@@ -121,13 +150,12 @@ export class TableScene extends Phaser.Scene {
         if (view.phase === 'betting') this.actionBar.setLocked(false);
         else this.leverPanel.setAccepting(true);
         break;
-      case 'bot':
-        if (view.phase === 'betting') this.bubble.say(t('bot.thinking'));
-        this.time.delayedCall(TIMING.botThink, () => {
-          this.bubble.hide();
-          this.submit(() => this.session.botAct());
-        });
+      case 'bot': {
+        if (view.phase === 'betting') this.showBubble(t('bot.thinking'), null);
+        const { min, max } = BOT_TUNING.thinkMs;
+        this.time.delayedCall(this.tableRng.range(min, max), () => this.botMove());
         break;
+      }
       case 'deal':
         this.actionBar.setVisible(false);
         this.nextButton.setVisible(true).setEnabled(true);
@@ -136,6 +164,47 @@ export class TableScene extends Phaser.Scene {
         this.finish(view);
         break;
     }
+  }
+
+  private botMove(): void {
+    this.hideBubble();
+    this.submit(() => {
+      const started = performance.now();
+      const turn = this.session.botAct();
+      const line = turn.talk ? t(this.pickTalk(turn.talk)) : null;
+      if (this.debugBot && turn.trace) {
+        // On a phone there is no console, so the numbers also go under the bubble.
+        const ms = performance.now() - started;
+        console.debug('[bot]', { ...turn.trace, ms });
+        const note = t('debug.botNote', {
+          equity: Math.round(turn.trace.equity * 100),
+          ms: ms.toFixed(1),
+        });
+        this.showBubble(line ?? '…', BOT_TUNING.talkMs, note);
+      } else if (line) {
+        this.showBubble(line, BOT_TUNING.talkMs);
+      }
+      return turn.events;
+    });
+  }
+
+  /** A line for the bubble; it stays up for a while without holding up playback. */
+  private say(group: TalkGroup): void {
+    this.showBubble(t(this.pickTalk(group)), BOT_TUNING.talkMs);
+  }
+
+  /** Shows the bubble, replacing any line still up; `ms: null` keeps it until hidden. */
+  private showBubble(line: string, ms: number | null, note = ''): void {
+    this.bubbleTimer?.remove();
+    this.bubbleTimer = null;
+    this.bubble.say(line, note);
+    if (ms !== null) this.bubbleTimer = this.time.delayedCall(ms, () => this.hideBubble());
+  }
+
+  private hideBubble(): void {
+    this.bubbleTimer?.remove();
+    this.bubbleTimer = null;
+    this.bubble.hide();
   }
 
   private lockInput(): void {
@@ -229,6 +298,7 @@ export class TableScene extends Phaser.Scene {
         await this.showBanner(t('banner.folded', { name: this.names[event.seat], n: event.pulls }));
         break;
       case 'challengeStarted':
+        this.say(event.loser === HUMAN ? 'challenge.youPull' : 'challenge.botPulls');
         await this.leverPanel.open(this.names[event.loser], event.pulls, event.loser === HUMAN);
         break;
       case 'leverPulled':
@@ -260,6 +330,7 @@ export class TableScene extends Phaser.Scene {
   }
 
   private clearRound(): void {
+    this.hideBubble();
     this.revealed = 0;
     this.showHand([], []);
     [...this.boardCards, ...this.botCards, ...this.playerCards].forEach((c) => c.setVisible(false));

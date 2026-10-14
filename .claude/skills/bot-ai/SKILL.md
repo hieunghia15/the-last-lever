@@ -12,34 +12,32 @@ Bot so **rủi ro thua ván nếu Bỏ ngay** với **rủi ro thua ván nếu �
 1. **Bot chỉ nhận `PlayerView`** từ `viewFor(state, seat)`, không bao giờ nhận `GameState`. Mọi hàm public của `src/ai` có tham số kiểu `PlayerView`.
 2. **Không import** Phaser, `scenes/`, `ui/`, `i18n/`. Bot trả **nhãn** (`'strong'`, `'weak'`...), lớp hiển thị chọn câu qua `t()`.
 3. **RNG riêng của bot** (`new Rng(seed)` từ `core/rng.ts`), tách khỏi RNG của ván. Nhờ vậy số lần bot mô phỏng không làm đổi bài được chia, và cùng hạt giống thì bot quyết định giống nhau.
-4. **Mọi con số nằm trong `config.ts`**, thêm khối `BOT` (xem phần cuối). L(m) lấy từ `dangerProbability`, không viết tay bảng số.
+4. **Mọi con số nằm trong `config.ts`**, khối `BOT` (xem phần cuối). L(m) lấy từ `dangerProbability`, không viết tay bảng số.
 5. **Độ trễ suy nghĩ** 0,8–2,5 giây là việc của lớp hiển thị. Bot quyết định đồng bộ và tức thì.
 
 ## equity.ts
 
 ```ts
-export interface Equity {
-  win: number;
-  tie: number;
-  lose: number;
-  equity: number; // win + tie / 2
-}
-export function estimateEquity(hole: Card[], board: Card[], rng: Rng, samples = BOT.equitySamples): Equity;
+// Trả một số: thắng + hòa / 2. Dùng chung cho bot và thẻ "BỘ BÀI".
+export function estimateEquity(hole: readonly Card[], board: readonly Card[], rng: Rng, trials = EQUITY.trials): number;
 ```
 
 - Bộ bài còn lại là 52 lá trừ bài riêng của bot và các lá chung **đã lật**. Bài thật của đối thủ là ẩn số.
 - Mỗi lần mô phỏng: Fisher-Yates **một phần** trên mảng bài còn lại để rút 2 lá cho đối thủ và `5 − board.length` lá chung, rồi chấm hai tay bằng `evaluate7` và so.
-- **Hiệu năng:** dưới 50 ms cho 300 lần trên điện thoại. Cấp phát mảng làm việc một lần ngoài vòng lặp, tái sử dụng bên trong. Nếu chậm thì tối ưu `evaluate7` trước, chuyển sang Web Worker sau, và giảm `samples` là phương án cuối.
+- **Hiệu năng:** dưới 50 ms cho 300 lần trên điện thoại (≈ 0,4 ms trên máy tính). Cấp phát mảng làm việc một lần ngoài vòng lặp, tái sử dụng bên trong. Nếu chậm thì tối ưu `evaluate7` trước, chuyển sang Web Worker sau, và giảm `EQUITY.trials` là phương án cuối.
+- Bot cache equity theo bộ lá (bài riêng + lá chung đã lật) trong một ván, xoá khi `view.round` đổi.
 
 ## personalities.ts
 
-| Tính cách | `fear` | Tăng khi equity > | Tất tay khi equity > | Lừa Tăng | Lừa Tất tay | Nói dối |
-| --- | --- | --- | --- | --- | --- | --- |
-| Thận trọng | 1,3 | 0,70 | 0,90 | 0 | 0 | 10% |
-| Cân bằng | 1,0 | 0,60 | 0,80 | 0 | 0 | 20% |
-| Liều lĩnh | 0,7 | 0,50 | 0,65 | 15% số ván | 5% số ván | 35% |
+Số đã chỉnh theo `docs/balance.md` (khác tài liệu thiết kế: hệ số sợ thấp hơn vì công thức chỉ tính rủi ro của bot, không tính lợi khi đối thủ phải kéo):
 
-Ba tính cách dùng chung một nhân vật. Việc gán Dễ/Vừa/Khó làm sau khi chạy `scripts/balance.ts` (quyết định #4).
+| Tính cách | `fear` | Tăng khi equity > | Tất tay khi equity > | Lừa Tăng | Lừa Tất tay | Nói dối | Mức khó |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Thận trọng | 0,9 | 0,70 | 0,90 | 0 | 0 | 10% | Dễ |
+| Cân bằng | 0,75 | 0,60 | 0,80 | 0 | 0 | 20% | Vừa |
+| Liều lĩnh | 0,6 | 0,55 | 0,70 | 15% số ván | 5% số ván | 35% | Khó |
+
+Ba tính cách dùng chung một nhân vật. Mức khó gán qua `DIFFICULTY_PERSONALITY` trong config (quyết định #4). `personality(id)` trả số của tính cách, `fearFactor(p, view)` cộng điều chỉnh theo tỉ số.
 
 ## botBrain.ts
 
@@ -72,7 +70,9 @@ Nếu đi tiếp và vẫn còn quyền tăng: equity > ngưỡng Tất tay thì
 
 ### Lừa tính theo **ván**, không theo lượt
 
-Đầu mỗi ván (phát hiện qua `view.round` đổi), bot rút một lần xem ván này có lừa Tất tay hay lừa Tăng không, theo tỉ lệ của tính cách. Một ván lừa chỉ ép hành động tăng ở cơ hội hợp lệ đầu tiên. Nếu sau đó bị tăng lại thì quay về công thức Theo/Bỏ như thường.
+Đầu mỗi ván (phát hiện qua `view.round` đổi), bot rút một lần xem ván này có lừa Tất tay hay lừa Tăng không, theo tỉ lệ của tính cách. Ván lừa chỉ dùng ở lượt **được Xem bài** đầu tiên có quyền tăng, rồi về `'none'`. Khi bị tăng thì luôn dùng công thức Theo/Bỏ, kể cả trong ván lừa.
+
+Phần toán nằm trong hàm thuần `decideBet(view, { equity, fear, personality, bluff })` trả `{ move, trace }`, không gọi RNG; `createBot` lo RNG, cache equity, ván lừa và nhãn thoại. `finalLevel(view)` là m_cuối.
 
 ### Chọn cần
 
@@ -83,7 +83,9 @@ Bot chọn đều ngẫu nhiên trong các cần `'unknown'` của `view.challen
 - Bot nói ở khoảng 30% lượt hành động (`BOT.talkChance`) và luôn có một câu khi vào thử thách.
 - **Nhãn thật** lấy theo equity: `strong` nếu ≥ `BOT.talkStrongAt`, `weak` nếu < `BOT.talkWeakAt`, còn lại `neutral`.
 - **Nói dối** theo tỉ lệ của tính cách: `strong` thành `weak` và ngược lại; `neutral` đổi ngẫu nhiên sang `strong` hoặc `weak`.
-- Bot chỉ trả nhãn. Lớp hiển thị bốc ngẫu nhiên một trong khoảng 8 câu của nhãn đó trong `vi.ts` và `en.ts`, hiện trong 2 giây.
+- Bot chỉ trả nhãn (và `trace.lied`). Lớp hiển thị bốc câu qua `createTalkPicker` (`src/ui/talkModel.ts`, không lặp câu liền nhau) từ các khóa `talk.<nhãn>.<n>` trong `vi.ts` và `en.ts`, hiện trong `BOT.talkMs`.
+- Câu khi vào thử thách là nhóm riêng, **không nói dối** và không do bot chọn: `TableScene` hiện `talk.challenge.botPulls.*` hoặc `talk.challenge.youPull.*` khi phát `challengeStarted`. `chooseLever` không trả `talk`.
+- `MatchSession.botAct()` trả `{ events, talk?, trace? }`. `?debug=bot` in `trace` (equity, fear, riskFold, riskGo, bluffed, lied) ra console.
 
 ### Hình dạng API gợi ý
 
@@ -93,7 +95,12 @@ export interface Bot {
   chooseBet(view: PlayerView): { move: BetMove; talk?: TalkLabel };
   chooseLever(view: PlayerView): { lever: number; talk?: TalkLabel };
 }
-export function createBot(opts: { personality: PersonalityId; seed: number }): Bot;
+export function createBot(opts: {
+  personality: PersonalityId;
+  seed: number;
+  trials?: number; // script cân bằng giảm để chạy nhanh
+  overrides?: Partial<Personality>; // script cân bằng thử số trước khi đưa vào config
+}): Bot;
 ```
 
 `move` trả ra **phải nằm trong `view.legal`**. Kiểm tra lại ở cuối hàm cho chắc.
@@ -101,29 +108,16 @@ export function createBot(opts: { personality: PersonalityId; seed: number }): B
 ## Bot cơ sở và scripts/balance.ts
 
 - **Bot ngẫu nhiên:** chọn đều trong `view.legal`, kéo cần ngẫu nhiên.
-- **Bot luôn Theo:** Theo khi bị tăng, ngoài ra Xem bài; không bao giờ Tăng hay Bỏ.
-- `scripts/balance.ts` cho mỗi cặp đấu 1.000 trận (kể cả đấu với bot cơ sở), đổi ghế qua lại cho công bằng, và in tỉ lệ thắng, tỉ lệ hòa, số ván trung bình mỗi trận, tần suất Tất tay và Bỏ. Có tham số `--seed` và `--mode`.
-- **Tiêu chí đạt** (quyết định #5): mỗi tính cách thắng bot cơ sở ≥ 60%, mọi cặp tính cách nằm trong 35–65%. Ghi kết quả cuối vào `docs/balance.md`.
+- **Bot luôn Theo:** `createCallingBot(seed)`. Theo khi bị tăng, ngoài ra Xem bài; không bao giờ Tăng hay Bỏ.
+- `src/ai/arena.ts`: `playMatch(bots, { mode, seed }, hooks)` chạy một trận giữa hai bot; test và script dùng chung.
+- `npm run balance -- [--matches 1000] [--mode 3|5|7] [--seed 1] [--trials 300] [--only a,b] [--set reckless.fear=0.6,...]`: mỗi cặp đấu 1.000 trận (kể cả đấu với bot cơ sở), đổi ghế qua lại, in bảng Markdown (tỉ lệ thắng ±95%, tỉ lệ hòa, số ván mỗi trận, Tất tay, Bỏ, lừa, nói dối) và ĐẠT/CHƯA ĐẠT. Cả bộ chạy khoảng 1 phút.
+- **Tiêu chí đạt** (quyết định #5): mỗi tính cách thắng bot ngẫu nhiên ≥ 60% và bot luôn-Theo ≥ 55%, mọi cặp tính cách nằm trong 35–65%. Ghi kết quả cuối vào `docs/balance.md`.
 
-## Khối BOT gợi ý cho config.ts
+## Khối BOT trong config.ts
 
-```ts
-export const BOT = {
-  equitySamples: 300,
-  thinkDelayMs: { min: 800, max: 2500 },
-  talkChance: 0.3,
-  talkStrongAt: 0.6,
-  talkWeakAt: 0.4,
-  talkDurationMs: 2000,
-  fearWhenOpponentOneAway: 0.2,
-  fearWhenLeading: -0.1,
-  personalities: {
-    cautious: { fear: 1.3, raiseAt: 0.7, allInAt: 0.9, bluffRaise: 0, bluffAllIn: 0, lieRate: 0.1 },
-    balanced: { fear: 1.0, raiseAt: 0.6, allInAt: 0.8, bluffRaise: 0, bluffAllIn: 0, lieRate: 0.2 },
-    reckless: { fear: 0.7, raiseAt: 0.5, allInAt: 0.65, bluffRaise: 0.15, bluffAllIn: 0.05, lieRate: 0.35 },
-  },
-} as const;
-```
+`BOT.thinkMs { min, max }`, `talkChance`, `talkStrongAt`, `talkWeakAt`, `talkMs`, `fearWhenOpponentOneAway`, `fearWhenLeading`, `personalities.{cautious,balanced,reckless}` (`fear`, `raiseAt`, `allInAt`, `bluffRaise`, `bluffAllIn`, `lieRate`). Số lần mô phỏng dùng `EQUITY.trials`. Kèm `PersonalityId`, `PERSONALITIES`, `DIFFICULTY_PERSONALITY`. `config.test.ts` kiểm tra khoảng giá trị hợp lệ.
+
+Lưu ý: `TableScene` import hằng số ghế `BOT` từ `matchSession`, nên khối config được import dưới tên `BOT as BOT_TUNING` ở đó.
 
 ## Checklist trước khi xong
 
