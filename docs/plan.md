@@ -123,22 +123,6 @@ Nhánh: `feat/pulling-lever`. Task chi tiết: [docs/tasks/phase-4.md](tasks/pha
 
 **Xong khi:** bạn chơi thử và thấy khoảnh khắc kéo cần đủ căng; không tụt khung hình.
 
-## Phase 5 – Hình ảnh thật, các màn phụ, hoàn thiện điện thoại
-
-- [ ] Nhân vật anime 1 tư thế: Claude vẽ SVG, xuất PNG (độ phân giải đủ cho khung 1280×720 trên màn hình mật độ cao)
-- [ ] Nền quán rượu tối, bàn phối cảnh, đèn treo
-- [ ] Bảng cần gạt và cần ở 3 trạng thái (chưa kéo, Safe, Nguy hiểm)
-- [ ] Atlas bài 52 lá + mặt sau từ Kenney (CC0), ghi `CREDITS.md`
-- [x] Nút, ô mức cược, chấm tỉ số vẽ thật
-- [x] `BootScene` có thanh tiến độ tải
-- [x] `MenuScene`: BEST OF 3/5/7, Dễ/Vừa/Khó/Ngẫu nhiên, Cách chơi, đổi ngôn ngữ; nút âm thanh ẩn cho tới khi có âm thanh
-- [x] Màn Cách chơi: 3–4 trang tĩnh có hình
-- [x] `ResultScene`: thắng/thua, tỉ số, số ván hòa, chơi lại, về menu
-- [x] localStorage: ngôn ngữ, thống kê thắng/thua theo mức khó (bọc try/catch)
-- [ ] Tối ưu dung lượng: nén PNG, atlas, kiểm tra kích thước build
-
-**Xong khi:** Bản build gzip < 5 MB.
-
 ## Rủi ro cần theo dõi
 
 - **Cân bằng:** mức 1 đã 50% thua ván. Báo cáo ở Phase 3 sẽ cho biết có cần thu hẹp số cần Nguy hiểm (ví dụ 1–3) hay không; chỉ cần đổi `config.ts`.
