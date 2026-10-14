@@ -6,7 +6,7 @@ Công nghệ: Phaser 4.2, TypeScript 6.0 (strict), Vite 8, Vitest, ESLint (có k
 
 ## Tài liệu nguồn
 
-- `the-last-lever-thiet-ke.md`: tài liệu thiết kế gốc, gồm luật chơi, bot, bố cục màn hình và kiến trúc.
+- `docs/the-last-lever-thiet-ke.md`: tài liệu thiết kế gốc, gồm luật chơi, bot, bố cục màn hình và kiến trúc.
 - `docs/plan.md`: các phase kèm checklist, cùng **bảng quyết định ghi đè tài liệu thiết kế**. Khi hai tài liệu mâu thuẫn, `docs/plan.md` được ưu tiên.
 - Làm xong một task thì đánh dấu `[x]` cho task đó trong `docs/plan.md`.
 

@@ -7,7 +7,7 @@ description: "Dùng khi viết hoặc sửa lõi luật chơi của The Last Lev
 
 Lõi là TypeScript thuần, chạy được trên Node, để sau này chuyển lên server. Scene chỉ gửi hành động vào và diễn lại sự kiện trả ra.
 
-**Thứ tự ưu tiên khi mâu thuẫn:** `docs/plan.md` (bảng quyết định) > `the-last-lever-thiet-ke.md` > skill này. Nếu luật đổi, sửa cả skill này.
+**Thứ tự ưu tiên khi mâu thuẫn:** `docs/plan.md` (bảng quyết định) > `docs/the-last-lever-thiet-ke.md` > skill này. Nếu luật đổi, sửa cả skill này.
 
 **Skill liên quan:** `poker-engine` (bài, xếp hạng, cược), `lever-challenge` (cần gạt), `bot-ai`, `testing-vitest`.
 

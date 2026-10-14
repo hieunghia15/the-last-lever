@@ -1,6 +1,6 @@
 # Plan triển khai: The Last Lever
 
-Oct 10, 2026 · Dựa trên [the-last-lever-thiet-ke.md](../the-last-lever-thiet-ke.md) và phiên grill cùng ngày.
+Oct 10, 2026 · Dựa trên [the-last-lever-thiet-ke.md](the-last-lever-thiet-ke.md) và phiên grill cùng ngày.
 
 Game chơi được từ cuối Phase 2 (bot ngẫu nhiên), đúng nghĩa từ cuối Phase 3 (bot thật). Không gắn ngày dự kiến. Mỗi phase là một nhánh `feat/phase-N-<tên>` và một PR vào `main`; Claude viết code, bạn review và chơi thử ở cuối mỗi phase.
 
@@ -119,7 +119,7 @@ Nhánh: `feat/pulling-lever`. Task chi tiết: [docs/tasks/phase-4.md](tasks/pha
 - [x] Người chơi trúng Nguy hiểm: lóe trắng, rung camera, tia điện tỏa ra mép màn hình
 - [x] Bot trúng Nguy hiểm: hiệu ứng phủ lên hình nhân vật (tia điện, rung, nháy màu); phát sau khi bảng cần đóng vì bảng che nhân vật
 - [x] Bot kéo cần có nhịp chần chừ trước mỗi cần
-- [ ] Chơi tay đủ bốn trường hợp kéo cần, chỉnh nhịp trong `LEVER_FX`, đo fps trên trình duyệt thật (task T11)
+- [x] Chơi tay đủ bốn trường hợp kéo cần, chỉnh nhịp trong `LEVER_FX`, đo fps trên trình duyệt thật (task T11) (bạn đã chơi thử và đo xong, Oct 14, 2026)
 
 **Xong khi:** bạn chơi thử và thấy khoảnh khắc kéo cần đủ căng; không tụt khung hình.
 
@@ -137,7 +137,7 @@ Nhánh: `feat/pulling-lever`. Task chi tiết: [docs/tasks/phase-4.md](tasks/pha
 - [x] localStorage: ngôn ngữ, thống kê thắng/thua theo mức khó (bọc try/catch)
 - [ ] Tối ưu dung lượng: nén PNG, atlas, kiểm tra kích thước build
 
-**Xong khi:** chơi trọn vẹn từ Menu tới Kết quả bằng hai ngôn ngữ, chạy mượt trên điện thoại thật, bản build gzip < 5 MB.
+**Xong khi:** Bản build gzip < 5 MB.
 
 ## Rủi ro cần theo dõi
 

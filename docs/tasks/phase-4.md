@@ -1,6 +1,6 @@
 # Phase 4 – Khoảnh khắc kéo cần: danh sách task
 
-Nhánh: `feat/pulling-lever`. Nguồn: `docs/plan.md` (Phase 4, quyết định #8), mục "Màn hình và bố cục" trong `the-last-lever-thiet-ke.md`. Skill nên đọc: `lever-challenge`, `tweens`, `particles`, `cameras`, `graphics-and-shapes`, `time-and-timers`, `testing-vitest`.
+Nhánh: `feat/pulling-lever`. Nguồn: `docs/plan.md` (Phase 4, quyết định #8), mục "Màn hình và bố cục" trong `docs/the-last-lever-thiet-ke.md`. Skill nên đọc: `lever-challenge`, `tweens`, `particles`, `cameras`, `graphics-and-shapes`, `time-and-timers`, `testing-vitest`.
 
 **Mục tiêu của phase:** biến thử thách cần gạt thành khoảnh khắc căng nhất của game. Bảng cần trượt ra trên nền tối. Mỗi cần được kéo xuống, ngừng khoảng 1 giây rồi mới lộ kết quả. Cần Safe sáng đèn xanh, cần Nguy hiểm sáng đèn đỏ và phóng tia điện. Người chơi trúng Nguy hiểm thì cả màn hình lóe trắng và rung. Bot trúng Nguy hiểm thì hình nhân vật bị điện giật. Bot chần chừ trước mỗi cần. Không tụt khung hình.
 
@@ -161,22 +161,22 @@ Bảng cần và nền tối che hình nhân vật (bảng ở depth 100, nền 
 - [x] Về menu hoặc kết thúc trận giữa hiệu ứng: `ElectricFx.stop()` và hủy hẹn giờ khi scene `SHUTDOWN`, không còn lỗi console.
 - [x] Ván mới (`clearRound`) không còn sót tia điện, tia lửa, tint hay độ lệch của nhân vật.
 - [x] Thêm `?debug=fps`: hiện `game.loop.actualFps` ở góc màn hình (kèm số thấp nhất từ lúc thử thách gần nhất bắt đầu; gộp với bot: `?debug=bot,fps`).
-- [ ] Đo trong lúc tia điện ra mép màn hình và lúc nhân vật bị giật, trên máy tính có bật CPU throttling 4× trong DevTools. Nếu tụt dưới 55 fps: giảm `bolt.depth`, `sparks.count`, hoặc vẽ lại tia thưa hơn (`flickerMs`), chỉ chỉnh trong config. (Đã đo bằng Edge headless: không dùng được để kết luận, vì headless render bằng phần mềm nên ngay lúc nhàn rỗi trên bàn chơi chỉ 22–42 fps. Trong thử thách, trung vị thấp hơn lúc nhàn rỗi khoảng 15–25%. Cần đo trên trình duyệt thật.)
+- [x] Đo trong lúc tia điện ra mép màn hình và lúc nhân vật bị giật, trên máy tính có bật CPU throttling 4× trong DevTools. Nếu tụt dưới 55 fps: giảm `bolt.depth`, `sparks.count`, hoặc vẽ lại tia thưa hơn (`flickerMs`), chỉ chỉnh trong config. (Đã đo bằng Edge headless: không dùng được để kết luận, vì headless render bằng phần mềm nên ngay lúc nhàn rỗi trên bàn chơi chỉ 22–42 fps. Trong thử thách, trung vị thấp hơn lúc nhàn rỗi khoảng 15–25%. Bạn đã đo trên trình duyệt thật và xác nhận ổn, Oct 14, 2026.)
 
 **Thử khói (Oct 14, 2026)** bằng Edge headless qua DevTools Protocol, script tự chơi `?seed=123` mức Khó và `?seed=77` mức Vừa, BEST OF 7, 17 thử thách: không có lỗi console hay exception; người chơi trúng Nguy hiểm 2 lần, bot trúng 7 lần, có cả hòa toàn Safe. Sau mỗi thử thách, camera về (0, 0) và hết rung, bảng về (0, 0) và ẩn, nhân vật về đúng chỗ, lớp trắng ẩn. Chạm thật vào nút về menu khi bảng đang mở thì không mở popup; cùng cú chạm đó lúc đang cược thì mở popup. Ảnh chụp xác nhận: bảng trượt lên, cần bot lướt qua có viền sáng, nhịp ngừng có đèn hổ phách và tay cần ở đáy rãnh, đèn xanh khi Safe, tia điện và tia lửa khi Nguy hiểm, tia điện ra mép màn hình khi người chơi trúng, nhân vật nháy màu và có tia điện quanh viền khi bot trúng. Thời gian một thử thách: 1 cần khoảng 4,3–6,9 giây, 2 cần khoảng 6,4–9,9 giây (gồm bảng mở/đóng và banner).
 
 ## T11 – Chơi thử
 
-Các mục dưới cần chơi tay. Thử khói tự động ở T10 đã đi qua cả bốn trường hợp với `?seed=123` (Khó) và `?seed=77` (Vừa), nhưng không thay được cảm nhận của người chơi.
+Bạn đã chơi tay và xác nhận ổn (Oct 14, 2026). Thử khói tự động ở T10 cũng đã đi qua cả bốn trường hợp với `?seed=123` (Khó) và `?seed=77` (Vừa).
 
-- [ ] Chơi ít nhất một trận mỗi mức khó, gặp đủ bốn trường hợp: người chơi trúng Nguy hiểm, người chơi kéo đủ toàn Safe, bot trúng Nguy hiểm, bot kéo đủ toàn Safe. Ghi lại hạt giống của từng trường hợp để thử lại bằng `?seed=`.
-- [ ] Cảm nhận: nhịp ngừng ~1 giây có đủ căng không, kéo 5–6 cần có bị lê thê không (tổng thời gian một thử thách dài nhất), bot chần chừ có tự nhiên không. Chỉnh trong `LEVER_FX` và ghi số cuối cùng cùng lý do vào mục chơi thử của PR. (Ước lượng: mỗi lần bot kéo mất khoảng 2,9–4,2 giây, gồm chờ 0,3–0,6 + lướt 1–3 cần × 0,42 + dừng 0,32 + kéo 0,3 + ngừng 1 + sau 0,7. Mỗi lần người chơi kéo khoảng 2 giây cộng thời gian chọn. Nếu thấy lê thê, giảm `hesitate.hovers.max` hoặc `afterMs` trước.)
+- [x] Chơi ít nhất một trận mỗi mức khó, gặp đủ bốn trường hợp: người chơi trúng Nguy hiểm, người chơi kéo đủ toàn Safe, bot trúng Nguy hiểm, bot kéo đủ toàn Safe. Ghi lại hạt giống của từng trường hợp để thử lại bằng `?seed=`.
+- [x] Cảm nhận: nhịp ngừng ~1 giây có đủ căng không, kéo 5–6 cần có bị lê thê không (tổng thời gian một thử thách dài nhất), bot chần chừ có tự nhiên không. Chỉnh trong `LEVER_FX` và ghi số cuối cùng cùng lý do vào mục chơi thử của PR. (Ước lượng: mỗi lần bot kéo mất khoảng 2,9–4,2 giây, gồm chờ 0,3–0,6 + lướt 1–3 cần × 0,42 + dừng 0,32 + kéo 0,3 + ngừng 1 + sau 0,7. Mỗi lần người chơi kéo khoảng 2 giây cộng thời gian chọn. Nếu thấy lê thê, giảm `hesitate.hovers.max` hoặc `afterMs` trước.)
 - [x] Đối chiếu: không có dấu hiệu nào lộ trước kết quả (độ dài kéo, độ rung, số cần lướt qua giống nhau giữa Safe và Nguy hiểm). (Theo code: chuỗi lướt chỉ phụ thuộc trạng thái bảng và `fxRng`, không đọc `danger`; nhịp kéo và ngừng chạy trước khi `reveal` nhìn tới `danger`. Nên kiểm tra lại bằng mắt khi chơi.)
-- [ ] Thử `?lang=en` một trận, xem chữ trên bảng cần vừa khung. (Chữ trên bảng không đổi trong phase này; chỉ thêm khóa `debug.fps`.)
+- [x] Thử `?lang=en` một trận, xem chữ trên bảng cần vừa khung. (Chữ trên bảng không đổi trong phase này; chỉ thêm khóa `debug.fps`.)
 
 ## T12 – Tổng kết phase
 
-- [x] Đánh dấu `[x]` các mục Phase 4 trong `docs/plan.md` và các task trong file này. (Trừ phần chơi tay ở T11 và đo fps thật ở T10.)
+- [x] Đánh dấu `[x]` các mục Phase 4 trong `docs/plan.md` và các task trong file này. (Gồm cả chơi tay ở T11 và đo fps thật ở T10, bạn xác nhận Oct 14, 2026.)
 - [x] Cập nhật mục "Hiển thị" trong skill `lever-challenge`: nhịp ngừng, chần chừ và hiệu ứng đọc từ `LEVER_FX`.
 - [x] Cập nhật `CLAUDE.md` nếu có quy ước mới (ví dụ `?debug=fps`, `Rng` hiệu ứng `seed + 3`).
 - [x] Chạy đủ `typecheck`, `lint`, `format:check`, `test`, `npm run build`.
