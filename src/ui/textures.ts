@@ -257,6 +257,18 @@ export function glowTexture(scene: Phaser.Scene): string {
   });
 }
 
+/** Small hot dot for spark particles; white so the emitter can tint it. */
+export function sparkTexture(scene: Phaser.Scene): string {
+  return paintTexture(scene, 'fx-spark', 16, 16, 1, (ctx) => {
+    const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.9)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 16, 16);
+  });
+}
+
 /** Felt surface with its centre highlight and the deep inset shadow from the design. */
 export function feltTexture(scene: Phaser.Scene): string {
   const { width, height, radius } = LAYOUT.felt;

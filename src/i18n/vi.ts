@@ -30,6 +30,7 @@ export const vi = {
   'table.street': 'Vòng: {street}',
   'bot.thinking': 'Đang suy nghĩ…',
   'debug.botNote': 'equity {equity}% · {ms} ms',
+  'debug.fps': '{fps} fps · thấp nhất {min}',
 
   // Opponent speech bubble (decision #9): betting lines may lie, challenge lines never do.
   'talk.strong.1': 'Bài này đẹp đấy.',

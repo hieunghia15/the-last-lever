@@ -20,7 +20,7 @@ Những điểm dưới đây ghi đè hoặc làm rõ tài liệu thiết kế.
 | 8 | Biểu cảm nhân vật | **Bỏ các trạng thái biểu cảm.** Nhân vật là 1 hình tĩnh; khi trúng Nguy hiểm dùng hiệu ứng phủ (tia điện, rung, nháy màu). |
 | 9 | Bong bóng thoại thay biểu cảm | Hiện ở ~30% lượt hành động của bot và một câu khi vào thử thách, 2 giây. Câu có nhãn mạnh/yếu/trung tính; tỉ lệ nói dối: Thận trọng 10%, Cân bằng 20%, Liều lĩnh 35%. ~8 câu mỗi nhãn mỗi ngôn ngữ. |
 | 10 | Bộ xếp hạng bài | Tự viết, không dùng thư viện poker ngoài. Test đối chiếu với một bộ chấm tham chiếu chậm nhưng hiển nhiên, viết ngay trong test. 300 lần mô phỏng < 50 ms trên điện thoại. |
-| 11 | Điện thoại | Lớp phủ "Hãy xoay ngang" khi cầm dọc; xin toàn màn hình ở lần chạm đầu (trừ iOS Safari). |
+| 11 | Điện thoại | Lớp phủ "Hãy xoay ngang" khi cầm dọc, chỉ trên thiết bị cảm ứng; máy tính không bao giờ thấy, kể cả cửa sổ hẹp. CSS của lớp phủ nằm inline trong `<head>` của `index.html`, vì nạp qua `style.css` thì lớp phủ hiện chưa có style trên nền trắng mỗi lần tải trang (sửa Oct 14, 2026). Game luôn nằm ngang. Xin toàn màn hình ở lần chạm đầu (trừ iOS Safari). |
 | 12 | Lưu trữ | localStorage: ngôn ngữ, âm thanh (để sẵn), thống kê thắng/thua theo mức khó; mọi truy cập bọc try/catch. |
 | 13 | Ván hòa | Hòa do poker hòa bài và hòa do kéo toàn Safe gộp chung một con số. |
 | 14 | Phông chữ | Saira Stencil (OFL), tự host, có bộ ký tự tiếng Việt. |
@@ -28,7 +28,7 @@ Những điểm dưới đây ghi đè hoặc làm rõ tài liệu thiết kế.
 | 16 | Môi trường | Chỉ dev và chơi local (`vite`, `vite --host` để thử điện thoại qua LAN). Build ra web tĩnh, `base` cấu hình được, để sau deploy lên VPS. |
 | 17 | Mốc 6 cũ | Bỏ phần SDK cổng game; thử điện thoại và giảm dung lượng nhập vào Phase 5. |
 | 18 | Thẻ "BỘ BÀI" | Bàn chơi có thẻ bên trái (theo `stitch/`) cho người chơi xem bộ hiện tại, vị trí trong bảng xếp hạng, 5 lá tốt nhất, **Sức mạnh %** (equity với đối thủ ngẫu nhiên) và lá có thể nâng bộ. Chỉ dùng bài của người chơi và lá chung đã lật. |
-| 19 | Rời bàn giữa trận | Nút về menu ở góc phải thanh trên, hỏi xác nhận trước. Bàn chơi tạm dừng khi popup mở. Ván bị huỷ **không tính** vào thống kê thắng/thua. |
+| 19 | Rời bàn giữa trận | Nút về menu ở góc phải thanh trên, hỏi xác nhận trước. Bàn chơi tạm dừng khi popup mở. Ván bị huỷ **không tính** vào thống kê thắng/thua. Trong lúc thử thách kéo cần, nút bị nền tối che và không bấm được: người chơi không thoát ra giữa lúc kéo (chốt Oct 14, 2026). |
 
 **Để sau (ngoài các phase dưới):** âm thanh (nguồn CC0, ghi `CREDITS.md`), SDK cổng game (lớp `platform/` có adapter), deploy VPS, chơi online.
 
@@ -106,22 +106,22 @@ Nhánh: `feat/bot`. Task chi tiết: [docs/tasks/phase-3.md](tasks/phase-3.md).
 - [x] Chỉnh `config.ts` theo báo cáo; ghi kết quả cuối vào `docs/balance.md`
 - [x] Gán Dễ / Vừa / Khó cho ba tính cách theo kết quả (Dễ = Thận trọng, Vừa = Cân bằng, Khó = Liều lĩnh); menu đã có bộ chọn mức khó
 
-- [ ] Chơi tay với từng mức khó, thấy được bot lừa; đo equity trên điện thoại thật (task T13)
-
 **Xong khi:** mỗi tính cách thắng bot ngẫu nhiên ≥ 60% và bot luôn-Theo ≥ 55%, mọi cặp tính cách trong 35–65%, đã gán mức khó, và chơi tay với bot thấy được nó lừa.
 
 ## Phase 4 – Khoảnh khắc kéo cần
 
-- [ ] Bảng 6 cần trượt ra giữa màn hình khi vào `challenge`, nền phía sau tối đi
-- [x] Bộ đếm "đã kéo x / n"
-- [ ] Hoạt ảnh kéo cần, ngừng ~1 giây (cấu hình được) rồi mới lộ kết quả
-- [ ] Safe: đèn xanh; Nguy hiểm: đèn đỏ + tia điện (particles/graphics)
-- [ ] Người chơi trúng Nguy hiểm: lóe trắng, rung camera, tia điện tỏa ra mép màn hình
-- [ ] Bot trúng Nguy hiểm: hiệu ứng phủ lên hình nhân vật (tia điện, rung, nháy màu)
-- [ ] Bot kéo cần có nhịp chần chừ trước mỗi cần
-- [ ] Kiểm tra 60 fps trên điện thoại trong lúc phát hiệu ứng
+Nhánh: `feat/pulling-lever`. Task chi tiết: [docs/tasks/phase-4.md](tasks/phase-4.md).
 
-**Xong khi:** bạn chơi thử và thấy khoảnh khắc kéo cần đủ căng; không tụt khung hình trên điện thoại.
+- [x] Bảng 6 cần trượt ra giữa màn hình khi vào `challenge`, nền phía sau tối đi
+- [x] Bộ đếm "đã kéo x / n"
+- [x] Hoạt ảnh kéo cần, ngừng ~1 giây (cấu hình được) rồi mới lộ kết quả
+- [x] Safe: đèn xanh; Nguy hiểm: đèn đỏ + tia điện (particles/graphics)
+- [x] Người chơi trúng Nguy hiểm: lóe trắng, rung camera, tia điện tỏa ra mép màn hình
+- [x] Bot trúng Nguy hiểm: hiệu ứng phủ lên hình nhân vật (tia điện, rung, nháy màu); phát sau khi bảng cần đóng vì bảng che nhân vật
+- [x] Bot kéo cần có nhịp chần chừ trước mỗi cần
+- [ ] Chơi tay đủ bốn trường hợp kéo cần, chỉnh nhịp trong `LEVER_FX`, đo fps trên trình duyệt thật (task T11)
+
+**Xong khi:** bạn chơi thử và thấy khoảnh khắc kéo cần đủ căng; không tụt khung hình.
 
 ## Phase 5 – Hình ảnh thật, các màn phụ, hoàn thiện điện thoại
 
@@ -135,8 +135,6 @@ Nhánh: `feat/bot`. Task chi tiết: [docs/tasks/phase-3.md](tasks/phase-3.md).
 - [x] Màn Cách chơi: 3–4 trang tĩnh có hình
 - [x] `ResultScene`: thắng/thua, tỉ số, số ván hòa, chơi lại, về menu
 - [x] localStorage: ngôn ngữ, thống kê thắng/thua theo mức khó (bọc try/catch)
-- [ ] Xin toàn màn hình ở lần chạm đầu (bỏ qua trên iOS Safari)
-- [ ] Thử trên một điện thoại thật: chạm, xoay màn hình, tỉ lệ, chữ có dấu
 - [ ] Tối ưu dung lượng: nén PNG, atlas, kiểm tra kích thước build
 
 **Xong khi:** chơi trọn vẹn từ Menu tới Kết quả bằng hai ngôn ngữ, chạy mượt trên điện thoại thật, bản build gzip < 5 MB.

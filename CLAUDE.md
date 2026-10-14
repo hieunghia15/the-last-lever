@@ -23,7 +23,9 @@ Công nghệ: Phaser 4.2, TypeScript 6.0 (strict), Vite 8, Vitest, ESLint (có k
 | `npm run build` | Typecheck rồi build ra thư mục `dist/` (web tĩnh) |
 | `npm run balance` | Cho các bot tự đấu, in báo cáo cân bằng dạng Markdown cho `docs/balance.md` (`--matches`, `--seed`, `--only`, `--set`) |
 
-Thêm `?seed=123` vào URL để chơi lại đúng một trận, thêm `?debug=bot` để in lý do bot hành động (equity, rủi ro, lừa, nói dối) ra console.
+Thêm `?seed=123` vào URL để chơi lại đúng một trận, thêm `?debug=bot` để in lý do bot hành động (equity, rủi ro, lừa, nói dối) ra console, `?debug=fps` để hiện số khung hình (gộp: `?debug=bot,fps`).
+
+`TableScene` dùng ba `Rng` có hạt giống suy từ hạt giống trận: `seed + 1` cho bot, `seed + 2` cho nhịp suy nghĩ và câu thoại, `seed + 3` cho hiệu ứng (hình tia điện, cần bot lướt qua). Hiệu ứng có RNG riêng nên thêm hay bớt hiệu ứng không làm đổi câu thoại của các hạt giống cũ.
 
 Một việc chỉ được coi là xong khi `typecheck`, `lint`, `format:check` và `test` đều qua. CI (`.github/workflows/ci.yml`) chạy cùng các bước đó cho PR vào `main`.
 
@@ -77,14 +79,14 @@ Các luật này đã được chốt trong `docs/plan.md`:
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **the-last-lever** (14 symbols, 13 relationships, 0 execution flows).
+This project is indexed by GitNexus as **the-last-lever** (1807 symbols, 5427 relationships, 141 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 
 ## Always Do
 
 - **MUST run impact before editing.** Use `impact({target: "symbolName", direction: "upstream"})` or `node .gitnexus/run.cjs impact "symbolName" --direction upstream --repo .`; report callers, processes, and risk. Never substitute grep for graph analysis.
-- **MUST analyze graph changes before committing.** Use `detect_changes({scope: "all"})` (MCP) or `node .gitnexus/run.cjs detect-changes --scope all --repo .` (CLI fallback). `partial: true` or `truncated: true` is not a clean check — a zero means unseen, not unaffected; re-run it. For regression review: `detect_changes({scope: "compare", base_ref: "master"})` or `node .gitnexus/run.cjs detect-changes --scope compare --base-ref "master" --repo .`.
+- **MUST analyze graph changes before committing.** Use `detect_changes({scope: "all"})` (MCP) or `node .gitnexus/run.cjs detect-changes --scope all --repo .` (CLI fallback). `partial: true` or `truncated: true` is not a clean check — a zero means unseen, not unaffected; re-run it. For regression review: `detect_changes({scope: "compare", base_ref: "main"})` or `node .gitnexus/run.cjs detect-changes --scope compare --base-ref "main" --repo .`.
 - MUST warn on HIGH/CRITICAL `risk` pre-edit; never use `riskSharedAxes` to waive a HIGH/CRITICAL `risk` warning. Compare File/symbol: MCP File omits axes; Graph-RAG expands File.
 - **MUST treat `risk: UNKNOWN` as unresolved, not as low.** An empty caller set is not evidence the symbol is unused — it can also mean the callers are not resolvable by the index (plain-object property access, dynamic dispatch, cross-language calls). `impact` pairs `UNKNOWN` with a `riskNote` saying so. Confirm with a text search before treating the symbol as safe to change or delete; do not proceed on the strength of a zero.
 - **MUST use `query({search_query: "concept"})` for concepts/flows, `context({name: "symbolName"})` for a named symbol, or `impact` for blast radius, on read-only callers, dependencies, imports, or execution flow.** Graph first; text search only for empty/`UNKNOWN`/literals.

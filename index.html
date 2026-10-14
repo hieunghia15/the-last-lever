@@ -8,6 +8,47 @@
     />
     <meta name="theme-color" content="#000000" />
     <title>The Last Lever</title>
+    <!--
+      Inline, not in style.css: that file arrives with the script, and until then the overlay
+      below would show unstyled on a white page, on every load and on desktop too.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+      }
+
+      /* Portrait phones only: a narrow desktop window has a fine pointer and never sees this. */
+      #rotate-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        padding: 0 32px;
+        background: #14100c;
+        color: #f2a93b;
+        text-align: center;
+      }
+
+      #rotate-overlay p {
+        margin: 0;
+        color: #f3e6d0;
+        font-family: 'Saira Stencil', system-ui, sans-serif;
+        font-size: 20px;
+      }
+
+      @media (orientation: portrait) and (pointer: coarse) {
+        #rotate-overlay {
+          display: flex;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>

@@ -7,6 +7,7 @@ import {
   DIFFICULTY_PERSONALITY,
   DISPLAY,
   LAYOUT,
+  LEVER_FX,
   OPPONENTS,
   TIMING,
   type Difficulty,
@@ -25,9 +26,13 @@ import { tweenAsync, wait } from '../ui/anim';
 import { BetMeter } from '../ui/BetMeter';
 import { Button } from '../ui/Button';
 import { addCardSlot, CardSprite } from '../ui/CardSprite';
-import { addBackdrop, addGlow, addLamp, drawGlowRect, drawPanel } from '../ui/decor';
+import { addBackdrop, addLamp, drawGlowRect, drawPanel } from '../ui/decor';
+import { ElectricFx, FX_DEPTH } from '../ui/ElectricFx';
 import { HandPanel } from '../ui/HandPanel';
+import { hesitationPath } from '../ui/leverModel';
 import { LeverPanel } from '../ui/LeverPanel';
+import { edgeTargets } from '../ui/lightningModel';
+import { OpponentPortrait } from '../ui/OpponentPortrait';
 import { ScoreBar } from '../ui/ScoreBar';
 import { SpeechBubble } from '../ui/SpeechBubble';
 import { createTalkPicker, type TalkGroup } from '../ui/talkModel';
@@ -40,8 +45,12 @@ export type { TableSceneData } from './flow';
 
 const BOARD_SIZE = 5;
 
-/** ?debug=bot logs why the bot moved (equity, risks, bluffs, lies) to the console. */
-const debugBot = (): boolean => new URLSearchParams(location.search).get('debug') === 'bot';
+/**
+ * ?debug=bot logs why the bot moved (equity, risks, bluffs, lies) to the console; ?debug=fps
+ * shows the frame rate. Both at once: ?debug=bot,fps.
+ */
+const debugFlag = (flag: 'bot' | 'fps'): boolean =>
+  (new URLSearchParams(location.search).get('debug') ?? '').split(',').includes(flag);
 
 /**
  * The whole match. Animation only: every move goes through MatchSession, and the scene
@@ -65,7 +74,14 @@ export class TableScene extends Phaser.Scene {
   /** Thinking pauses and speech lines; seeded from the match so ?seed= replays the pacing too. */
   private tableRng!: Rng;
   private pickTalk!: (group: TalkGroup) => MessageKey;
+  /** Bolt shapes and the bot's hesitation; apart from tableRng so effects never shift lines. */
+  private fxRng!: Rng;
+  private fx!: ElectricFx;
+  private portrait!: OpponentPortrait;
+  /** White sheet over everything for the flash when the player is shocked. */
+  private whiteout!: Phaser.GameObjects.Rectangle;
   private debugBot = false;
+  private lowestFps = Infinity;
   private actionBar!: ActionBar;
   private leverPanel!: LeverPanel;
   private handPanel!: HandPanel;
@@ -92,7 +108,9 @@ export class TableScene extends Phaser.Scene {
     this.session = new MatchSession({ mode: data.mode, seed: data.seed, bot });
     this.tableRng = new Rng(data.seed + 2);
     this.pickTalk = createTalkPicker(this.tableRng);
-    this.debugBot = debugBot();
+    this.fxRng = new Rng(data.seed + 3);
+    this.debugBot = debugFlag('bot');
+    this.lowestFps = Infinity;
     this.names = [t('seat.you'), OPPONENTS[data.difficulty].name];
     this.botCards = [];
     this.boardCards = [];
@@ -106,6 +124,7 @@ export class TableScene extends Phaser.Scene {
 
   create(): void {
     addBackdrop(this, 'table');
+    this.fx = new ElectricFx(this, this.fxRng);
     this.drawTable();
     this.drawOpponent(this.setup.difficulty);
     // The lamp hangs in front of the opponent, as in the design.
@@ -117,7 +136,11 @@ export class TableScene extends Phaser.Scene {
 
     this.queue = new EventQueue((event) => this.play(event));
     this.queue.onIdle(() => this.advance());
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.queue.dispose());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.queue.dispose();
+      this.fx.stop();
+    });
+    if (debugFlag('fps')) this.showFps();
 
     this.render(this.session.view);
     this.cameras.main.fadeIn(TIMING.panelFade);
@@ -152,7 +175,9 @@ export class TableScene extends Phaser.Scene {
         break;
       case 'bot': {
         if (view.phase === 'betting') this.showBubble(t('bot.thinking'), null);
-        const { min, max } = BOT_TUNING.thinkMs;
+        // Before a pull the hesitation on the board does the drama, so the wait is short.
+        const { min, max } =
+          view.phase === 'betting' ? BOT_TUNING.thinkMs : LEVER_FX.botPullThinkMs;
         this.time.delayedCall(this.tableRng.range(min, max), () => this.botMove());
         break;
       }
@@ -298,14 +323,27 @@ export class TableScene extends Phaser.Scene {
         await this.showBanner(t('banner.folded', { name: this.names[event.seat], n: event.pulls }));
         break;
       case 'challengeStarted':
+        this.lowestFps = Infinity;
         this.say(event.loser === HUMAN ? 'challenge.youPull' : 'challenge.botPulls');
         await this.leverPanel.open(this.names[event.loser], event.pulls, event.loser === HUMAN);
         break;
       case 'leverPulled':
+        if (event.seat === BOT) {
+          // The bot has already chosen; this only acts it out, the same for Safe and Danger.
+          const { hovers } = LEVER_FX.hesitate;
+          const shown = this.leverPanel.shown();
+          await this.leverPanel.hesitate(hesitationPath(shown, event.lever, this.fxRng, hovers));
+        }
         await this.leverPanel.reveal(event.lever, event.danger);
+        if (event.danger && event.seat === HUMAN) await this.shockPlayer(event.lever);
+        await wait(this, LEVER_FX.afterMs);
         break;
       case 'roundEnded':
         await this.leverPanel.close();
+        // The board hides the opponent, so their shock plays once it has slid away.
+        if (event.result.kind === 'win' && event.result.winner === HUMAN) {
+          await this.portrait.shock(this.fx, this.fxRng);
+        }
         this.scoreBar.setScore(event.wins, event.draws, true);
         if (event.result.kind === 'win') {
           await this.showBanner(t('banner.danger', { name: this.names[event.result.winner] }));
@@ -329,7 +367,54 @@ export class TableScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * The player pulled Danger: one white flash, the camera shakes, and bolts fan out from the
+   * lever to the edges of the screen. The bot's hit never flashes the screen.
+   */
+  private async shockPlayer(lever: number): Promise<void> {
+    const { flashMs, flashAlpha, shakeMs, shakeIntensity, edgeBolts, boltMs } = LEVER_FX.playerHit;
+    const origin = this.leverPanel.leverPoint(lever);
+    const bolts = edgeTargets(origin, edgeBolts, this.fxRng, DISPLAY).map((to) => ({
+      from: origin,
+      to,
+    }));
+    this.cameras.main.shake(shakeMs, shakeIntensity);
+    this.whiteout.setAlpha(flashAlpha).setVisible(true);
+    await Promise.all([
+      // Ease in, so the white holds for a moment before it drops away.
+      tweenAsync(this, {
+        targets: this.whiteout,
+        alpha: 0,
+        duration: flashMs,
+        ease: 'Cubic.easeIn',
+      }),
+      this.fx.zap(bolts, boltMs, { depth: FX_DEPTH.screen }),
+      wait(this, shakeMs),
+    ]);
+    this.whiteout.setVisible(false);
+  }
+
+  /** ?debug=fps: the frame rate and its lowest reading since the last challenge started. */
+  private showFps(): void {
+    const label = this.add
+      .text(16, LAYOUT.topBar.height + 8, '', textStyle(LAYOUT.fontSize.caption, COLORS.shock))
+      .setDepth(200);
+    this.time.addEvent({
+      delay: 250,
+      loop: true,
+      callback: () => {
+        const fps = Math.round(this.game.loop.actualFps);
+        this.lowestFps = Math.min(this.lowestFps, fps);
+        label.setText(t('debug.fps', { fps, min: this.lowestFps }));
+      },
+    });
+  }
+
   private clearRound(): void {
+    // Nothing from the last challenge may linger into the new round.
+    this.fx.stop();
+    this.portrait.reset();
+    this.whiteout.setVisible(false);
     this.hideBubble();
     this.revealed = 0;
     this.showHand([], []);
@@ -444,17 +529,11 @@ export class TableScene extends Phaser.Scene {
 
   // ── Static layout ──────────────────────────────────────────────────────────
 
-  /** Portrait placeholder, name plate with difficulty, and the two face-down cards. */
+  /** Portrait, name plate with difficulty, and the two face-down cards. */
   private drawOpponent(difficulty: Difficulty): void {
     const o = LAYOUT.opponent;
     const { name, accent } = OPPONENTS[difficulty];
-    addGlow(this, o.x, o.avatarY, o.avatarRadius * 3, accent, 0.35);
-    const g = this.add.graphics();
-    g.fillStyle(COLORS.woodDark, 1).fillCircle(o.x, o.avatarY, o.avatarRadius);
-    g.lineStyle(2, accent, 1).strokeCircle(o.x, o.avatarY, o.avatarRadius - 1);
-    this.add
-      .text(o.x, o.avatarY, name.charAt(0), textStyle(LAYOUT.fontSize.heading, COLORS.amberLight))
-      .setOrigin(0.5);
+    this.portrait = new OpponentPortrait(this, name, accent);
 
     const plate = this.add.graphics();
     const nameText = this.add
@@ -603,7 +682,12 @@ export class TableScene extends Phaser.Scene {
       () => this.onNextRound(),
     ).setVisible(false);
 
-    this.leverPanel = new LeverPanel(this, (lever) => this.onPull(lever));
+    this.leverPanel = new LeverPanel(this, (lever) => this.onPull(lever), this.fx);
+    this.whiteout = this.add
+      .rectangle(0, 0, DISPLAY.width, DISPLAY.height, 0xffffff)
+      .setOrigin(0)
+      .setDepth(FX_DEPTH.screen + 1)
+      .setVisible(false);
   }
 }
 

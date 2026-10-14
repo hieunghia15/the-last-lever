@@ -32,6 +32,7 @@ export const en: Messages = {
   'table.street': 'Street: {street}',
   'bot.thinking': 'Thinking…',
   'debug.botNote': 'equity {equity}% · {ms} ms',
+  'debug.fps': '{fps} fps · low {min}',
 
   // Opponent speech bubble (decision #9): betting lines may lie, challenge lines never do.
   'talk.strong.1': 'Nice cards, these.',
